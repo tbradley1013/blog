@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.26" />
+
+
+<title>Exploring English Premier League Historical Match Results - goonR blog</title>
+<meta property="og:title" content="Exploring English Premier League Historical Match Results - goonR blog">
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdn.bootcss.com/highlight.js/9.11.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/tbradley1013">GitHub</a></li>
+    
+    <li><a href="https://www.linkedin.com/in/tyler-bradley-68707292/">LinkedIn</a></li>
+    
+    <li><a href="https://twitter.com/tb_goonR">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">13 min read</span>
+    
+
+    <h1 class="article-title">Exploring English Premier League Historical Match Results</h1>
+
+    
+    <span class="article-date">2017/08/09</span>
+    
+
+    <div class="article-content">
+      <div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In honor of the start of a new season for the English Premier League (EPL), I am putting together this exploratory data analysis of historical EPL data to see how teams typically do to start a season.</p>
+</div>
+<div id="general-data-analysis" class="section level1">
+<h1>General Data Analysis</h1>
+<pre class="r"><code># loading in the required packages
+suppressWarnings(suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(lubridate)
+  library(magrittr)
+  library(tidyquant)
+  library(purrr)
+  library(ggjoy)
+}))</code></pre>
+<p>First, we will load in the data. All of the data used in this analysis is from www.football-data.co.uk.</p>
+<pre class="r"><code>files &lt;- list.files(path = &quot;epl_results&quot;, full.names = TRUE)
+
+raw_data &lt;- map(files, read.csv)</code></pre>
+<p>Below is the column information provided by the website: Div = League Division Date = Match Date (dd/mm/yy) HomeTeam = Home Team AwayTeam = Away Team FTHG and HG = Full Time Home Team Goals FTAG and AG = Full Time Away Team Goals FTR and Res = Full Time Result (H=Home Win, D=Draw, A=Away Win) HTHG = Half Time Home Team Goals HTAG = Half Time Away Team Goals HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)</p>
+<p>Match Statistics (where available) Attendance = Crowd Attendance Referee = Match Referee HS = Home Team Shots AS = Away Team Shots HST = Home Team Shots on Target AST = Away Team Shots on Target HHW = Home Team Hit Woodwork AHW = Away Team Hit Woodwork HC = Home Team Corners AC = Away Team Corners HF = Home Team Fouls Committed AF = Away Team Fouls Committed HO = Home Team Offsides AO = Away Team Offsides HY = Home Team Yellow Cards AY = Away Team Yellow Cards HR = Home Team Red Cards AR = Away Team Red Cards</p>
+<p>There are more columns provided in the raw data set that have to do with betting odds, however, we will remove them as they are not going to be used in this analysis. Additionally, only two seasons data has attendance recorded, so this will be removed. Looking through the data, all of the data sets for the 2000/2001 through the 2016/2017 seasons have all of tje match statistics listed above. The data sets prior to the 2000/2001 data set only have the general data and none of the match statistics. Becasue of these differences in available data we will only use the general statistics for the first part of this analysis.</p>
+<pre class="r"><code>data_general &lt;- map(raw_data, function(x){
+  output &lt;- x %&gt;%
+    filter(Date != &quot;&quot;) %&gt;%  #the csv files pulled in some extra rows, this line removes them
+    mutate(Date = dmy(Date)) %&gt;% #converting the Date column from a factor to date object
+    select(Div:HTR) %&gt;%
+    mutate(season = ifelse(month(Date) &gt; 7,
+                                   year(Date) + 1,
+                                    year(Date)))  #creating a reference date 
+  return(output)
+})
+
+data &lt;- do.call(rbind, data_general) %&gt;% as.tibble()</code></pre>
+<pre class="r"><code>data </code></pre>
+<pre class="r"><code># # A tibble: 8,360 x 11
+#       Div       Date    HomeTeam       AwayTeam  FTHG  FTAG    FTR  HTHG  HTAG    HTR season
+#    &lt;fctr&gt;     &lt;date&gt;      &lt;fctr&gt;         &lt;fctr&gt; &lt;int&gt; &lt;int&gt; &lt;fctr&gt; &lt;int&gt; &lt;int&gt; &lt;fctr&gt;  &lt;dbl&gt;
+#  1     E0 1995-08-19 Aston Villa     Man United     3     1      H     3     0      H   1996
+#  2     E0 1995-08-19   Blackburn            QPR     1     0      H     1     0      H   1996
+#  3     E0 1995-08-19     Chelsea        Everton     0     0      D     0     0      D   1996
+#  4     E0 1995-08-19   Liverpool Sheffield Weds     1     0      H     0     0      D   1996
+#  5     E0 1995-08-19    Man City      Tottenham     1     1      D     0     1      A   1996
+#  6     E0 1995-08-19   Newcastle       Coventry     3     0      H     1     0      H   1996
+#  7     E0 1995-08-19 Southampton  Nott&#39;m Forest     3     4      A     1     3      A   1996
+#  8     E0 1995-08-19    West Ham          Leeds     1     2      A     1     0      H   1996
+#  9     E0 1995-08-19   Wimbledon         Bolton     3     2      H     2     2      D   1996
+# 10     E0 1995-08-20     Arsenal  Middlesbrough     1     1      D     1     1      D   1996
+# # ... with 8,350 more rows</code></pre>
+<p>Now that the data from the csv files is all in one data frame, we can do some manipulation to get it into a more tidy format.</p>
+<pre class="r"><code>data_tidy &lt;- data %&gt;%
+  gather(key = &quot;venue&quot;, value = team, HomeTeam:AwayTeam) %&gt;% 
+  arrange(Date) %&gt;%
+  mutate_if(is.factor, as.character) %&gt;%
+  mutate(venue = ifelse(venue == &quot;HomeTeam&quot;,
+                        &quot;Home&quot;,
+                        &quot;Away&quot;),
+         FTR = case_when(venue == &quot;Home&quot; &amp; FTR == &quot;H&quot; ~ &quot;W&quot;,
+                         venue == &quot;Home&quot; &amp; FTR == &quot;A&quot; ~ &quot;L&quot;,
+                         venue == &quot;Away&quot; &amp; FTR == &quot;H&quot; ~ &quot;L&quot;,
+                         venue == &quot;Away&quot; &amp; FTR == &quot;A&quot; ~ &quot;W&quot;,
+                         TRUE ~ FTR),
+         HTR = case_when(venue == &quot;Home&quot; &amp; HTR == &quot;H&quot; ~ &quot;W&quot;,
+                         venue == &quot;Home&quot; &amp; HTR == &quot;A&quot; ~ &quot;L&quot;,
+                         venue == &quot;Away&quot; &amp; HTR == &quot;H&quot; ~ &quot;L&quot;,
+                         venue == &quot;Away&quot; &amp; HTR == &quot;A&quot; ~ &quot;W&quot;,
+                         TRUE ~ HTR),
+         FTGF = ifelse(venue == &quot;Home&quot;, FTHG, FTAG),  #Full Time Goals For
+         FTGA = ifelse(venue == &quot;Home&quot;, FTAG, FTHG),  #Full Time Goals Against
+         HTGF = ifelse(venue == &quot;Home&quot;, HTHG, HTAG),  #Half Time Goals For
+         HTGA = ifelse(venue == &quot;Home&quot;, HTAG, HTHG),  #Half Time Goals Against
+         points_earned = case_when(FTR == &quot;W&quot; ~ 3,           #adding points
+                                   FTR == &quot;D&quot; ~ 1,
+                                   FTR == &quot;L&quot; ~ 0)) %&gt;% 
+  select(Div, season, Date, team, venue, FTR, FTGF, FTGA, HTR, HTGF, HTGA, points_earned) %&gt;%
+  group_by(season, team) %&gt;%
+  mutate(points = cumsum(points_earned)) %&gt;% #calculating the number of points each team has through out the season
+  ungroup()
+
+data_tidy</code></pre>
+<pre class="r"><code># # A tibble: 16,720 x 13
+# # Groups:   season, team [440]
+#      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA points_earned points
+#    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt;         &lt;dbl&gt;  &lt;dbl&gt;
+#  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3     0             3      3
+#  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1     0             3      3
+#  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0     0             1      1
+#  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0     0             3      3
+#  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0     1             1      1
+#  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1     0             3      3
+#  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1     3             0      0
+#  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0
+#  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3
+# 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0
+# # ... with 16,710 more rows</code></pre>
+<p>To ensure that our tidying did not create any missing values, we can use the <code>summarise_all()</code> function.</p>
+<pre class="r"><code>data_tidy %&gt;% 
+  summarise_all(function(x) sum(is.na(x)))</code></pre>
+<pre class="r"><code># # A tibble: 1 x 11
+#     Div season  Date  team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA
+#   &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+# 1     0      0     0     0     0     0     0     0     0     0     0</code></pre>
+<p>Now that we know that the data is in a tidy format, we can begin exploring the data. As an Arsenal fan, I think we should start by looking at how Arsenal has done each year.</p>
+<pre class="r"><code>data_tidy %&gt;%
+  filter(team == &quot;Arsenal&quot;,
+         season &lt; 2007) %&gt;%
+  ggplot(aes(Date, points)) +
+  facet_wrap(~season, scales = &quot;free&quot;) +
+  geom_line() +
+  theme_tq() +
+  scale_x_date(date_breaks = &quot;1 month&quot;, date_labels = &quot;%m/%d&quot;) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+        axis.text.y = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        axis.title = element_text(size = 12)) +
+  labs(x = &quot;&quot;, 
+       y = &quot;Point Tally&quot;,
+       title = &quot;Arsenal Point Tally over the course of each season from the 1995/1996 season to the 2005/2006 season&quot;)</code></pre>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-1-1.png" width="1152" /></p>
+<pre class="r"><code>data_tidy %&gt;%
+  filter(team == &quot;Arsenal&quot;,
+         season &gt;= 2007) %&gt;%
+  ggplot(aes(Date, points)) +
+  facet_wrap(~season, scales = &quot;free&quot;) +
+  geom_line() +
+  theme_tq() +
+  scale_x_date(date_breaks = &quot;1 month&quot;, date_labels = &quot;%m/%d&quot;) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+        axis.text.y = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        axis.title = element_text(size = 12))+
+  labs(x = &quot;&quot;, 
+       y = &quot;Point Tally&quot;,
+       title = &quot;Arsenal Point Tally over the course of each season from the 2006/2007 season to the 2016/2017 season&quot;)</code></pre>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-2-1.png" width="1152" /></p>
+<p>From these graphs, it looks like Arsenal follow a similar pattern every year, which is not surprising since the 2017 season was the first in Arsene Wenger’s tenure that they have not finised in the top 4. Looking at the plot for the 2017 season, it is clear that the period of the season that killed their chances of finishing in the top 4 was the strech of games between Februrary and March where their point increase flat lined. Let’s now take a look at team’s average finishing point total.</p>
+<pre class="r"><code>season_ending &lt;- data_tidy %&gt;%
+  group_by(season, team) %&gt;%
+  summarise(final_points = max(points), final_goals_for = sum(FTGF), final_goals_against = sum(FTGA)) %&gt;%
+  ungroup() %&gt;%
+  group_by(season) %&gt;%
+  mutate(table_position = 20 - rank(final_points, ties.method = &quot;min&quot;)) %&gt;%
+  ungroup()
+  
+season_ending</code></pre>
+<pre class="r"><code># # A tibble: 440 x 6
+#    season        team final_points final_goals_for final_goals_against table_position
+#     &lt;dbl&gt;       &lt;chr&gt;        &lt;dbl&gt;           &lt;int&gt;               &lt;int&gt;          &lt;dbl&gt;
+#  1   1996     Arsenal           63              49                  32              4
+#  2   1996 Aston Villa           63              52                  35              4
+#  3   1996   Blackburn           61              61                  47              7
+#  4   1996      Bolton           29              39                  71             19
+#  5   1996     Chelsea           50              46                  44             10
+#  6   1996    Coventry           38              42                  60             17
+#  7   1996     Everton           61              64                  44              7
+#  8   1996       Leeds           43              40                  57             12
+#  9   1996   Liverpool           71              70                  34              2
+# 10   1996    Man City           38              33                  58             17
+# # ... with 430 more rows</code></pre>
+<p>From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest number of goals for, and then by head to head match-ups. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won’t worry about fixing these ties.</p>
+<pre class="r"><code>season_ending_stats &lt;- season_ending %&gt;%
+  group_by(team) %&gt;%
+  summarise(avg_final_points = round(mean(final_points), 0), 
+            sd_final_points = round(sd(final_points), 0), 
+            avg_final_goals_for = round(mean(final_goals_for), 0), 
+            sd_final_goals_for = round(sd(final_goals_for), 0),
+            avg_final_goals_against = round(mean(final_goals_against), 0), 
+            sd_final_goals_against = round(sd(final_goals_against), 0),
+            avg_table_position = round(mean(table_position), 0),
+            sd_table_poisiton = round(sd(table_position), 0),
+            num_seasons = n())
+
+season_ending_stats</code></pre>
+<pre class="r"><code># # A tibble: 46 x 10
+#           team avg_final_points sd_final_points avg_final_goals_for sd_final_goals_for avg_final_goals_against sd_final_goals_against
+#          &lt;chr&gt;            &lt;dbl&gt;           &lt;dbl&gt;               &lt;dbl&gt;              &lt;dbl&gt;                   &lt;dbl&gt;                  &lt;dbl&gt;
+#  1     Arsenal               75               7                  71                  9                      36                      7
+#  2 Aston Villa               50              11                  46                  9                      50                     11
+#  3    Barnsley               35             NaN                  37                NaN                      82                    NaN
+#  4  Birmingham               43               7                  39                  6                      51                      6
+#  5   Blackburn               48              10                  48                  8                      52                      9
+#  6   Blackpool               39             NaN                  55                NaN                      78                    NaN
+#  7      Bolton               44               9                  44                  5                      57                     10
+#  8 Bournemouth               44               3                  50                  7                      67                      0
+#  9    Bradford               31               7                  34                  6                      69                      1
+# 10     Burnley               34               5                  36                  7                      63                     16
+# # ... with 36 more rows, and 3 more variables: avg_table_position &lt;dbl&gt;, sd_table_poisiton &lt;dbl&gt;, num_seasons &lt;int&gt;</code></pre>
+<p>As we can see from the tibble summary, there are several teams that have only been in the premier league for a single year, resulting in NaN values for the standard deviation columns. To avoid cluttering the next graph, we will remove any teams that have not been in the premier league for at least 10 of the 22 seasons being analyzed.</p>
+<pre class="r"><code>season_ending_stats %&gt;%
+  filter(num_seasons &gt;= 10) %&gt;%
+  arrange(-avg_final_points) %&gt;%
+  mutate(team = factor(team, team)) %&gt;%
+  ggplot(aes(team, avg_final_points)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;red&quot;) +
+  geom_point(color = &quot;navy&quot;) +
+  geom_errorbar(aes(ymin = avg_final_points - 2*sd_final_points, ymax = avg_final_points + 2*sd_final_points), color = &quot;navy&quot;, size = 1) +
+  theme_tq() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 12)) +
+  labs(x = &quot;Team&quot;,
+       y = &quot;Final Points&quot;,
+       title = &quot;Average Final Points from 1995/1996 season to 2016/2017 season&quot;,
+       subtitle = &quot;Only teams with 10 or more seasons in the EPL were included&quot;)</code></pre>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/bar-graph-season-stats-1.png" width="1152" /></p>
+<p>It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically gaurantees a season that is safe from relegation. However, for the teams with the lower average finaly point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone.</p>
+<p>Now, it will be interesting to see how these teams final point tallies will look on the new joyplots from the <code>ggjoy</code> package.</p>
+<pre class="r"><code>season_ending %&gt;%
+  group_by(team) %&gt;%
+  mutate(num_seasons = n(),
+         avg_final_points = round(mean(final_points), 0)) %&gt;% #add these columns for filtering and factoring respectively
+  ungroup() %&gt;%
+  filter(num_seasons &gt;= 10) %&gt;%
+  arrange(avg_final_points) %&gt;%
+  mutate(team = factor(team, unique(team))) %&gt;%
+  ggplot(aes(final_points, team)) +
+  geom_joy(scale = 0.9, rel_min_height = 0.01, fill = &quot;red&quot;, color = &quot;black&quot;, size = 1) +
+  theme_tq()+
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12)) +
+  labs(x = &quot;Final Points&quot;,
+       y = &quot;Team&quot;,
+       title = &quot;Joyplot showing EPL teams&#39; individual season final point tally distribution&quot;)</code></pre>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/final-points-joyplot-1.png" width="1152" /></p>
+<p>The joyplot confirms the conclusions drawn from the bar chart. Manchester United and Arsenal have the highest final point distribution and both have close to a bell curve. However, Chelsea and Manchester City both have much wider distributions as they have much more ups and downs over the past 22 years.</p>
+</div>
+<div id="looking-at-opening-weekend-results" class="section level1">
+<h1>Looking at opening weekend results</h1>
+<p>Since this weekend marks the start of the 2017/2018 season, it will be interesting to see how teams have faired over the last 22 seasons. First, we will start by filtering for the first game of the season.</p>
+<pre class="r"><code>opening_games &lt;- data_tidy %&gt;%
+  group_by(season, team) %&gt;%
+  mutate(final_points = max(points), 
+         final_goals_for = sum(FTGF), 
+         final_goals_against = sum(FTGA),
+         table_position = 20 - rank(final_points, ties.method = &quot;min&quot;)) %&gt;%
+  ungroup() %&gt;%
+  group_by(season, team) %&gt;%
+  mutate(game = rank(Date)) %&gt;%
+  ungroup() %&gt;%
+  filter(game == 1) %&gt;%
+  group_by(team) %&gt;%
+  mutate(final_points_last = lag(final_points),
+         final_goals_for_last = lag(final_goals_for),
+         final_goals_against_last = lag(final_goals_against),
+         final_table_position_last = lag(table_position)) %&gt;%
+  ungroup()
+
+opening_games</code></pre>
+<pre class="r"><code># # A tibble: 440 x 22
+#      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA points_earned points final_points final_goals_for
+#    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt;         &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;           &lt;int&gt;
+#  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3     0             3      3           63              52
+#  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1     0             3      3           61              61
+#  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0     0             1      1           50              46
+#  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0     0             3      3           71              70
+#  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0     1             1      1           38              33
+#  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1     0             3      3           78              66
+#  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1     3             0      0           38              34
+#  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0           51              43
+#  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3           41              55
+# 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0           82              73
+# # ... with 430 more rows, and 7 more variables: final_goals_against &lt;int&gt;, table_position &lt;dbl&gt;, game &lt;dbl&gt;, final_points_last &lt;dbl&gt;,
+# #   final_goals_for_last &lt;int&gt;, final_goals_against_last &lt;int&gt;, final_table_position_last &lt;dbl&gt;</code></pre>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/highlight.min.js"></script>
+
+
+
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/r.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/9.11.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+
+    
+  </body>
+</html>
+
