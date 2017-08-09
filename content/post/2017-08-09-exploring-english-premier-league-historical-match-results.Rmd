@@ -33,7 +33,7 @@ suppressWarnings(suppressPackageStartupMessages({
 }))
 ```
 
-First, we will load in the data. All of the data used in this analysis is from www.football-data.co.uk. 
+First, we will load in the data. All of the data used in this analysis is from <a, href = "www.football-data.co.uk">www.football-data.co.uk</a>. 
 
 ```{r read-files}
 files <- list.files(path = "epl_results", full.names = TRUE)
