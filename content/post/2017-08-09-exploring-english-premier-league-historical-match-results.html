@@ -136,7 +136,7 @@ data_tidy</code></pre>
   labs(x = &quot;&quot;, 
        y = &quot;Point Tally&quot;,
        title = &quot;Arsenal Point Tally over the course of each season from the 1995/1996 season to the 2005/2006 season&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-1-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-1-1.png" width="800" /></p>
 <pre class="r"><code>data_tidy %&gt;%
   filter(team == &quot;Arsenal&quot;,
          season &gt;= 2007) %&gt;%
@@ -154,7 +154,7 @@ data_tidy</code></pre>
   labs(x = &quot;&quot;, 
        y = &quot;Point Tally&quot;,
        title = &quot;Arsenal Point Tally over the course of each season from the 2006/2007 season to the 2016/2017 season&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-2-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-2-1.png" width="800" /></p>
 <p>From these graphs, it looks like Arsenal follow a similar pattern every year, which is not surprising since the 2017 season was the first in Arsene Wenger’s tenure that they have not finished in the top 4. Looking at the plot for the 2017 season, it is clear that the period of the season that killed their chances of finishing in the top 4 was the stretch of games between February and March where their point increase flat lined. Let’s now take a look at team’s average finishing point total.</p>
 <pre class="r"><code>season_ending &lt;- data_tidy %&gt;%
   group_by(season, team) %&gt;%
@@ -229,7 +229,7 @@ season_ending_stats</code></pre>
        y = &quot;Final Points&quot;,
        title = &quot;Average Final Points from 1995/1996 season to 2016/2017 season&quot;,
        subtitle = &quot;Only teams with 10 or more seasons in the EPL were included&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/bar-graph-season-stats-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/bar-graph-season-stats-1.png" width="800" /></p>
 <p>It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically guarantees a season that is safe from relegation. However, for the teams with the lower average finally point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone.</p>
 <p>Now, it will be interesting to see how these teams final point tallies will look on the new joyplots from the <code>ggjoy</code> package.</p>
 <pre class="r"><code>season_ending %&gt;%
@@ -249,7 +249,7 @@ season_ending_stats</code></pre>
   labs(x = &quot;Final Points&quot;,
        y = &quot;Team&quot;,
        title = &quot;Joyplot showing EPL teams&#39; individual season final point tally distribution&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/final-points-joyplot-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/final-points-joyplot-1.png" width="800" /></p>
 <p>The joyplot confirms the conclusions drawn from the bar chart. Manchester United and Arsenal have the highest final point distribution and both have close to a bell curve. However, Chelsea and Manchester City both have much wider distributions as they have much more ups and downs over the past 22 years.</p>
 </div>
 <div id="looking-at-opening-weekend-results" class="section level1">
@@ -340,7 +340,7 @@ home_adv</code></pre>
   labs(x = &quot;Year&quot;,
        y = &quot;Percentage of Results by Year&quot;,
        title = &quot;The Percent of Results (Win, Draw, Loss) per Season for Home Teams on Opening Weekend&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/home-adv-graph-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/home-adv-graph-1.png" width="800" /></p>
 <p>It looks like the winning percentage for home teams fluctuates and there is no clear trend as to whether being home on opening weekend provides any benefit. Since 2014, the home teams have a higher losing percentage than winning percentage. Perhaps, in recent years, there has been some shift that has made playing away from home more desirable on opening weekend. Likely this is just random, however, and there is no overall benefit to being home or away. While there does not appear to be any overall inferences that can be made from playing home or away on opening weekend, looking at the winning percentage for home and away opening games for the individual teams may provide some interesting results.</p>
 <pre class="r"><code>home_adv_team &lt;- opening_games %&gt;%
   group_by(team) %&gt;%
@@ -401,7 +401,7 @@ home_adv_team</code></pre>
        y = &quot;Winning Percentage&quot;,
        title = &quot;Winning Percentage for Teams on Opening Weekend both Home and Away&quot;,
        subtitle = &quot;Only teams with more than 10 seasons in the premier league were included&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/unnamed-chunk-2-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/unnamed-chunk-2-1.png" width="800" /></p>
 <p>This figure seems to provide much more insight into how home field advantage can impact teams. For example, Arsenal have a 60% winning percentage at home on opening weekend, and their opponent this weekend, Leicester City, have not won a opening game away from home in the premier league since 1996. This is a very positive sign for the gunners as their match is being played at the Emirates Stadium (Arsenal’s Home Field). Chelsea have a winning percentage in the high 70s when they play their opening game at home, as they do this year. That fact seems promising (unfortunately) for the blues, as their opening match this year is at home. Other noticeable impacts of home field advantage are New Castle United and Sunderland. New Castle have a home winning percentage of 50% on opening weekend, but only have a 10% winning percentage for away games on opening weekend. Fortunately for them, they are also playing at home this year. Unfortunately for them, they are matched up with West Ham who don’t have much issue playing on the road opening weekend, with a 40% winning percentage when away from home. Sunderland, similarly has an average home winning percentage of just under 40% for opening weekend, but have a winning percentage of only just north of 10% when playing away from home. However, Sunderland were relegated last season, so maybe they will have better luck in the Championship. Several teams seem not to be impacted by whether or not they play at home on opening weekend. Manchester United and Manchester City both only see a slight dip in winning percentage when away from home, and Blackburn has a 40% winning percentage when both home and away on opening weekend.</p>
 <p>Let’s take a look at each team’s overall winning percentage on opening weekend.</p>
 <pre class="r"><code>opening_games %&gt;%
@@ -429,7 +429,7 @@ home_adv_team</code></pre>
        y = &quot;Winning Percentage&quot;,
        title = &quot;Winning Percentage for Teams on Opening Weekend&quot;,
        subtitle = &quot;Only teams with more than 10 seasons in the premier league were included&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/opening-win-perc-1.png" width="1152" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/opening-win-perc-1.png" width="800" /></p>
 <p>It looks like the results follow a similar pattern to the previous figure, as expected. Chelsea and Manchester United have the best winning percentages (&gt;60%) on opening weekend, with Arsenal, Liverpool, Manchester City, and West Ham all close behind in the 50% range.</p>
 </div>
 <div id="conclusions" class="section level1">
