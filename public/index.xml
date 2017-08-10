@@ -17,8 +17,7 @@
       <pubDate>Wed, 09 Aug 2017 00:00:00 +0000</pubDate>
       
       <guid>/2017/08/09/epl-opening-weekend/</guid>
-      <description>IntroductionIn honor of the start of a new season for the English Premier League (EPL), I am putting together this exploratory data analysis of historical EPL data to see how teams typically do to start a season.
-General Data Analysis# loading in the required packagessuppressWarnings(suppressPackageStartupMessages({library(dplyr)library(tidyr)library(ggplot2)library(lubridate)library(magrittr)library(tidyquant)library(purrr)library(ggjoy)}))First, we will load in the data. All of the data used in this analysis is from www.</description>
+      <description>IntroductionI was listening to Jeff Atwood’s interview on the podcast http://developeronfire.com/ and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about https://twitter.com/hashtag/rstats but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any.</description>
     </item>
     
     <item>
@@ -27,7 +26,7 @@
       <pubDate>Thu, 05 May 2016 21:48:51 -0700</pubDate>
       
       <guid>/about/</guid>
-      <description>This is a &amp;ldquo;hello world&amp;rdquo; example website for the blogdown package. The theme was forked from @jrutheiser/hugo-lithium-theme and modified by Yihui Xie.</description>
+      <description>My Name is Tyler Bradley and I an Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. I am a PhD student at Drexel University studying Environmental Engineering, more specifically using data science to solve distribution system water quality issues. I am huge fan of R and the tidyverse and all that it includes.</description>
     </item>
     
   </channel>

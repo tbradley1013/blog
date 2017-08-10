@@ -1,7 +1,7 @@
 ---
 title: Exploring English Premier League Historical Match Results
 author: Tyler Bradley
-date: '2017-08-09'
+date: '2017-08-10'
 slug: epl-opening-weekend
 categories:
   - R
@@ -16,13 +16,14 @@ knitr::opts_chunk$set(cache = TRUE)
 ```
 
 #Introduction
-In honor of the start of a new season for the English Premier League (EPL), I am putting together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. 
+I was listening to [https://twitter.com/codinghorror?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor](Jeff Atwood)'s interview on the podcast [http://developeronfire.com/](Developer on Fire) and he said something that struck home with me. It was along the lines of, "The best time to start blogging is yesterday." I have been considering starting a blog about [https://twitter.com/hashtag/rstats](#rstats) but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie's [https://github.com/rstudio/blogdown](blogdown), I was able to set up the basic webpage pretty easily too. 
+
+So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on [https://twitter.com/tb_goonR](twitter) (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)
 
 #General Data Analysis
 ```{r libraries}
 # loading in the required packages
 suppressWarnings(suppressPackageStartupMessages({
-  library(dplyr)
   library(tidyr)
   library(ggplot2)
   library(lubridate)
@@ -30,10 +31,11 @@ suppressWarnings(suppressPackageStartupMessages({
   library(tidyquant)
   library(purrr)
   library(ggjoy)
+  library(dplyr)
 }))
 ```
 
-First, we will load in the data. All of the data used in this analysis is from <a, href = "www.football-data.co.uk">www.football-data.co.uk</a>. 
+First, we will load in the data. All of the data used in this analysis is from [www.football-data.co.uk](www.football-data.co.uk), and can be found on [https://github.com/tbradley1013/epl](my github page) under the epl repository. 
 
 ```{r read-files}
 files <- list.files(path = "epl_results", full.names = TRUE)
@@ -43,38 +45,38 @@ raw_data <- map(files, read.csv)
 
 
 Below is the column information provided by the website:
-    Div = League Division
-    Date = Match Date (dd/mm/yy)
-    HomeTeam = Home Team
-    AwayTeam = Away Team
-    FTHG and HG = Full Time Home Team Goals
-    FTAG and AG = Full Time Away Team Goals
-    FTR and Res = Full Time Result (H=Home Win, D=Draw, A=Away Win) 
-    HTHG = Half Time Home Team Goals 
-    HTAG = Half Time Away Team Goals 
-    HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)
+    * Div = League Division
+    * Date = Match Date (dd/mm/yy)
+    * HomeTeam = Home Team
+    * AwayTeam = Away Team
+    * FTHG and HG = Full Time Home Team Goals
+    * FTAG and AG = Full Time Away Team Goals
+    * FTR and Res = Full Time Result (H=Home Win, D=Draw, A=Away Win) 
+    * HTHG = Half Time Home Team Goals 
+    * HTAG = Half Time Away Team Goals 
+    * HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)
 
 Match Statistics (where available)
-    Attendance = Crowd Attendance
-    Referee = Match Referee
-    HS = Home Team Shots
-    AS = Away Team Shots
-    HST = Home Team Shots on Target
-    AST = Away Team Shots on Target
-    HHW = Home Team Hit Woodwork
-    AHW = Away Team Hit Woodwork
-    HC = Home Team Corners
-    AC = Away Team Corners
-    HF = Home Team Fouls Committed
-    AF = Away Team Fouls Committed
-    HO = Home Team Offsides
-    AO = Away Team Offsides
-    HY = Home Team Yellow Cards
-    AY = Away Team Yellow Cards
-    HR = Home Team Red Cards
-    AR = Away Team Red Cards
+    * Attendance = Crowd Attendance
+    * Referee = Match Referee
+    * HS = Home Team Shots
+    * AS = Away Team Shots
+    * HST = Home Team Shots on Target
+    * AST = Away Team Shots on Target
+    * HHW = Home Team Hit Woodwork
+    * AHW = Away Team Hit Woodwork
+    * HC = Home Team Corners
+    * AC = Away Team Corners
+    * HF = Home Team Fouls Committed
+    * AF = Away Team Fouls Committed
+    * HO = Home Team Offsides
+    * AO = Away Team Offsides
+    * HY = Home Team Yellow Cards
+    * AY = Away Team Yellow Cards
+    * HR = Home Team Red Cards
+    * AR = Away Team Red Cards
     
-There are more columns provided in the raw data set that have to do with betting odds, however, we will remove them as they are not going to be used in this analysis. Additionally, only two seasons data has attendance recorded, so this will be removed. Looking through the data, all of the data sets for the 2000/2001 through the 2016/2017 seasons have all of tje match statistics listed above. The data sets prior to the 2000/2001 data set only have the general data and none of the match statistics.  Becasue of these differences in available data we will only use the general statistics for the first part of this analysis. 
+There are more columns provided in the raw data set that have to do with betting odds, however, we will remove them as they are not going to be used in this analysis. Additionally, only two seasons data has attendance recorded, so this will be removed. Looking through the data, all of the data sets for the 2000/2001 through the 2016/2017 seasons have all of the match statistics listed above. The data sets prior to the 2000/2001 data set only have the general data and none of the match statistics.  Because of these differences in available data we will only use the general statistics for the first part of this analysis. 
 
 ```{r combine-data}
 data_general <- map(raw_data, function(x){
@@ -140,7 +142,8 @@ data_tidy <- data %>%
          points_earned = case_when(FTR == "W" ~ 3,           #adding points
                                    FTR == "D" ~ 1,
                                    FTR == "L" ~ 0)) %>% 
-  select(Div, season, Date, team, venue, FTR, FTGF, FTGA, HTR, HTGF, HTGA, points_earned) %>%
+  select(Div, season, Date, team, venue, FTR, FTGF, 
+         FTGA, HTR, HTGF, HTGA, points_earned) %>%
   group_by(season, team) %>%
   mutate(points = cumsum(points_earned)) %>% #calculating the number of points each team has through out the season
   ungroup()
@@ -191,7 +194,8 @@ data_tidy %>%
   geom_line() +
   theme_tq() +
   scale_x_date(date_breaks = "1 month", date_labels = "%m/%d") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, 
+                                   vjust = 0.5, size = 12),
         axis.text.y = element_text(size = 12),
         strip.text = element_text(size = 12),
         axis.title = element_text(size = 12)) +
@@ -209,8 +213,10 @@ data_tidy %>%
   facet_wrap(~season, scales = "free") +
   geom_line() +
   theme_tq() +
-  scale_x_date(date_breaks = "1 month", date_labels = "%m/%d") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+  scale_x_date(date_breaks = "1 month", 
+               date_labels = "%m/%d") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, 
+                                   vjust = 0.5, size = 12),
         axis.text.y = element_text(size = 12),
         strip.text = element_text(size = 12),
         axis.title = element_text(size = 12))+
@@ -220,12 +226,14 @@ data_tidy %>%
 
 ```
 
-From these graphs, it looks like Arsenal follow a similar pattern every year, which is not surprising since the 2017 season was the first in Arsene Wenger's tenure that they have not finised in the top 4. Looking at the plot for the 2017 season, it is clear that the period of the season that killed their chances of finishing in the top 4 was the strech of games between Februrary and March where their point increase flat lined. Let's now take a look at team's average finishing point total.
+From these graphs, it looks like Arsenal follow a similar pattern every year, which is not surprising since the 2017 season was the first in Arsene Wenger's tenure that they have not finished in the top 4. Looking at the plot for the 2017 season, it is clear that the period of the season that killed their chances of finishing in the top 4 was the stretch of games between February and March where their point increase flat lined. Let's now take a look at team's average finishing point total.
 
 ```{r season-ending-points, results = "hide"}
 season_ending <- data_tidy %>%
   group_by(season, team) %>%
-  summarise(final_points = max(points), final_goals_for = sum(FTGF), final_goals_against = sum(FTGA)) %>%
+  summarise(final_points = max(points), 
+            final_goals_for = sum(FTGF), 
+            final_goals_against = sum(FTGA)) %>%
   ungroup() %>%
   group_by(season) %>%
   mutate(table_position = 20 - rank(final_points, ties.method = "min")) %>%
@@ -295,9 +303,12 @@ season_ending_stats %>%
   ggplot(aes(team, avg_final_points)) +
   geom_bar(stat = "identity", fill = "red") +
   geom_point(color = "navy") +
-  geom_errorbar(aes(ymin = avg_final_points - 2*sd_final_points, ymax = avg_final_points + 2*sd_final_points), color = "navy", size = 1) +
+  geom_errorbar(aes(ymin = avg_final_points - 2*sd_final_points, 
+                    ymax = avg_final_points + 2*sd_final_points), 
+                color = "navy", size = 1) +
   theme_tq() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, 
+                                   vjust = 0.5, size = 12),
         axis.text.y = element_text(size = 12),
         axis.title = element_text(size = 12)) +
   labs(x = "Team",
@@ -307,7 +318,7 @@ season_ending_stats %>%
 
 ```
 
-It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically gaurantees a season that is safe from relegation. However, for the teams with the lower average finaly point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone. 
+It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically guarantees a season that is safe from relegation. However, for the teams with the lower average finally point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone. 
 
 Now, it will be interesting to see how these teams final point tallies will look on the new joyplots from the `ggjoy` package.
 ```{r final-points-joyplot, fig.width = 12, fig.height = 10, message = FALSE}
@@ -320,7 +331,8 @@ season_ending %>%
   arrange(avg_final_points) %>%
   mutate(team = factor(team, unique(team))) %>%
   ggplot(aes(final_points, team)) +
-  geom_joy(scale = 0.9, rel_min_height = 0.01, fill = "red", color = "black", size = 1) +
+  geom_joy(scale = 0.9, rel_min_height = 0.01, 
+           fill = "red", color = "black", size = 1) +
   theme_tq()+
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 12)) +
@@ -333,18 +345,18 @@ season_ending %>%
 The joyplot confirms the conclusions drawn from the bar chart. Manchester United and Arsenal have the highest final point distribution and both have close to a bell curve. However, Chelsea and Manchester City both have much wider distributions as they have much more ups and downs over the past 22 years. 
 
 #Looking at opening weekend results
-Since this weekend marks the start of the 2017/2018 season, it will be interesting to see how teams have faired over the last 22 seasons. First, we will start by filtering for the first game of the season. 
+Since this weekend marks the start of the 2017/2018 season, it will be interesting to see how teams have fared over the last 22 seasons. First, we will start by filtering for the first game of the season. 
 
 ```{r first-game-results, results = "hide"}
 opening_games <- data_tidy %>%
   group_by(season, team) %>%
   mutate(final_points = max(points), 
-         final_goals_for = sum(FTGF), 
-         final_goals_against = sum(FTGA),
-         table_position = 20 - rank(final_points, ties.method = "min")) %>%
+            final_goals_for = sum(FTGF), 
+            final_goals_against = sum(FTGA),
+         game = rank(Date)) %>%
   ungroup() %>%
-  group_by(season, team) %>%
-  mutate(game = rank(Date)) %>%
+  group_by(season, game) %>%
+  mutate(table_position = 21 - min_rank(final_points)) %>%
   ungroup() %>%
   filter(game == 1) %>%
   group_by(team) %>%
@@ -371,7 +383,173 @@ opening_games
 #  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0           51              43
 #  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3           41              55
 # 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0           82              73
-# # ... with 430 more rows, and 7 more variables: final_goals_against <int>, table_position <dbl>, game <dbl>, final_points_last <dbl>,
+# # ... with 430 more rows, and 7 more variables: final_goals_against <int>, game <dbl>, table_position <dbl>, final_points_last <dbl>,
 # #   final_goals_for_last <int>, final_goals_against_last <int>, final_table_position_last <dbl>
 ```
 
+
+Now that we have a data set with all of the teams opening games results, we can look at some of the factors that could influence opening weekend results. First let's look at how home field advantage helps teams on opening weekend
+
+```{r home-adv-opening, results = "hide"}
+opening_home_adv <- opening_games %>%
+  group_by(venue) %>%
+  summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
+            perc_L = round((sum(FTR == "L")/n()) * 100, 1),
+            perc_D = round((sum(FTR == "D")/n()) * 100, 1))
+
+opening_home_adv
+```
+```{r show-home-adv-opening}
+# # A tibble: 2 x 4
+#   venue perc_W perc_L perc_D
+#   <chr>  <dbl>  <dbl>  <dbl>
+# 1  Away   30.5   42.3   27.3
+# 2  Home   41.8   30.9   27.3
+```
+
+It looks like the home teams have better luck on the first weekend of the season than the away team. Let's look at home this compares with the home field advantage of all games to see if there is any difference for the first week.
+
+```{r home-adv-general, results = "hide"}
+home_adv <- data_tidy %>%
+  group_by(venue) %>%
+  summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
+            perc_L = round((sum(FTR == "L")/n()) * 100, 1),
+            perc_D = round((sum(FTR == "D")/n()) * 100, 1))
+
+home_adv
+```
+```{r show-home-adv-general}
+# # A tibble: 2 x 4
+#   venue perc_W perc_L perc_D
+#   <chr>  <dbl>  <dbl>  <dbl>
+# 1  Away   27.5   46.5     26
+# 2  Home   46.5   27.5     26
+```
+
+It looks like the away team actually fairs slightly better on opening weekend than during the rest of the season. Let's now take a look at the winning percentage by year for the home teams and the away teams. 
+
+```{r home-adv-graph, fig.width = 12, fig.height = 7}
+opening_games %>%
+  group_by(season, venue) %>%
+  summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
+            perc_L = round((sum(FTR == "L")/n()) * 100, 1),
+            perc_D = round((sum(FTR == "D")/n()) * 100, 1)) %>%
+  gather(key = "result", value = "percentage", perc_W:perc_D) %>%
+  mutate(result = case_when(result == "perc_W" ~ "Winning Percentage",
+                            result == "perc_L" ~ "Losing Percentage",
+                            TRUE ~ "Percent Draws")) %>%
+  filter(venue == "Home") %>%
+  ggplot(aes(season, percentage, color = result)) +
+  geom_point() +
+  geom_line(size = 1) +
+  theme_tq() +
+  scale_color_tq() +
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.5, 
+                                   hjust = 1, 
+                                   size = 12),
+        axis.text.y = element_text(size = 12),
+        legend.title = element_blank()) +
+  labs(x = "Year",
+       y = "Percentage of Results by Year",
+       title = "The Percent of Results (Win, Draw, Loss) per Season for Home Teams on Opening Weekend")
+  
+
+```
+
+It looks like the winning percentage for home teams fluctuates and there is no clear trend as to whether being home on opening weekend provides any benefit. Since 2014, the home teams have a higher losing percentage than winning percentage. Perhaps, in recent years, there has been some shift that has made playing away from home more desirable on opening weekend. Likely this is just random, however, and there is no overall benefit to being home or away. While there does not appear to be any overall inferences that can be made from playing home or away on opening weekend, looking at the winning percentage for home and away opening games for the individual teams may provide some interesting results. 
+
+```{r home-adv-by-team}
+home_adv_team <- opening_games %>%
+  group_by(team) %>%
+  #removing teams that have not played at least ten seasons in the premier league
+  mutate(num_seasons = n()) %>%
+  filter(num_seasons >= 10) %>% 
+  select(-num_seasons) %>%
+  ungroup() %>%
+  group_by(team, venue) %>%
+  summarise(winning_percentage = round((sum(FTR == "W")/n()) * 100, 0), 
+            num_games_total = n()) %>%
+  ungroup()
+
+home_adv_team
+```
+```{r show-home-adv-by-team}
+# # A tibble: 36 x 4
+#           team venue winning_percentage num_games_total
+#          <chr> <chr>              <dbl>           <int>
+#  1     Arsenal  Away                 43               7
+#  2     Arsenal  Home                 60              15
+#  3 Aston Villa  Away                 31              13
+#  4 Aston Villa  Home                 50               8
+#  5   Blackburn  Away                 40               5
+#  6   Blackburn  Home                 40              10
+#  7      Bolton  Away                 43               7
+#  8      Bolton  Home                 50               6
+#  9     Chelsea  Away                 56               9
+# 10     Chelsea  Home                 77              13
+# # ... with 26 more rows
+```
+
+```{r, fig.width = 12, fig.height = 7}
+home_adv_team %>%
+  arrange(-winning_percentage) %>%
+  mutate(team = factor(team, unique(team)),
+         venue = factor(venue, levels = c("Home", "Away"))) %>%
+  ggplot(aes(team, winning_percentage, fill = venue)) +
+  facet_wrap(~venue, scales = "fixed", ncol = 1) +
+  geom_bar(stat = "identity") +
+  theme_tq() +
+  scale_fill_tq() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+        axis.text.y = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        legend.position = "none") +
+  geom_text(aes(x = team, y = 85, label = paste("n =", as.character(num_games_total)))) +
+  labs(x = "",
+       y = "Winning Percentage",
+       title = "Winning Percentage for Teams on Opening Weekend both Home and Away",
+       subtitle = "Only teams with more than 10 seasons in the premier league were included")
+
+```
+
+This figure seems to provide much more insight into how home field advantage can impact teams. For example, Arsenal have a 60% winning percentage at home on opening weekend, and their opponent this weekend, Leicester City, have not won a opening game away from home in the premier league since 1996. This is a very positive sign for the gunners as their match is being played at the Emirates Stadium (Arsenal's Home Field). Chelsea have a winning percentage in the high 70s when they play their opening game at home, as they do this year. That fact seems promising (unfortunately) for the blues, as their opening match this year is at home. Other noticeable impacts of home field advantage are New Castle United and Sunderland. New Castle have a home winning percentage of 50% on opening weekend, but only have a 10% winning percentage for away games on opening weekend. Fortunately for them, they are also playing at home this year. Unfortunately for them, they are matched up with West Ham who don't have much issue playing on the road opening weekend, with a 40% winning percentage when away from home. Sunderland, similarly has an average home winning percentage of just under 40% for opening weekend, but have a winning percentage of only just north of 10% when playing away from home. However, Sunderland were relegated last season, so maybe they will have better luck in the Championship. Several teams seem not to be impacted by whether or not they play at home on opening weekend. Manchester United and Manchester City both only see a slight dip in winning percentage when away from home, and Blackburn has a 40% winning percentage when both home and away on opening weekend. 
+
+Let's take a look at each team's overall winning percentage on opening weekend.
+
+```{r opening-win-perc, fig.width = 12, fig.height = 7}
+opening_games %>%
+  group_by(team) %>%
+  #removing teams that have not played at least ten seasons in the premier league
+  mutate(num_seasons = n()) %>%
+  filter(num_seasons >= 10) %>% 
+  select(-num_seasons) %>%
+  ungroup() %>%
+  group_by(team) %>%
+  summarise(winning_percentage = round((sum(FTR == "W")/n()) * 100, 0), 
+            num_games_total = n()) %>%
+  ungroup() %>%
+  arrange(-winning_percentage) %>%
+  mutate(team = factor(team, unique(team))) %>%
+  ggplot(aes(team, winning_percentage)) +
+  geom_bar(stat = "identity", fill = "red", color = "black") +
+  theme_tq() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 12),
+        axis.text.y = element_text(size = 12),
+        strip.text = element_text(size = 12),
+        legend.position = "none") +
+  geom_text(aes(x = team, y = 72, label = paste("n =", as.character(num_games_total)))) +
+  labs(x = "",
+       y = "Winning Percentage",
+       title = "Winning Percentage for Teams on Opening Weekend",
+       subtitle = "Only teams with more than 10 seasons in the premier league were included")
+
+```
+
+
+It looks like the results follow a similar pattern to the previous figure, as expected. Chelsea and Manchester United have the best winning percentages (>60%) on opening weekend, with Arsenal, Liverpool, Manchester City, and West Ham all close behind in the 50% range. 
+
+#Conclusions
+It looks like the odds are in favor of several of the typical powerhouse teams to perform well this weekend, if history has anything to say about it. There is much more that can be done with this data set and I hope to revisit it at a later date. I hope you all enjoyed reading this, I hope to put out more blog posts in the future! 
+
+And of course, COYG!!

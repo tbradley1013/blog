@@ -3,4 +3,8 @@ title: "About"
 date: "2016-05-05T21:48:51-07:00"
 ---
 
-This is a "hello world" example website for the [**blogdown**](https://github.com/rstudio/blogdown) package. The theme was forked from [@jrutheiser/hugo-lithium-theme](https://github.com/jrutheiser/hugo-lithium-theme) and modified by [Yihui Xie](https://github.com/yihui/hugo-lithium-theme).
+My Name is Tyler Bradley and I an Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. I am a PhD student at Drexel University studying Environmental Engineering, more specifically using data science to solve distribution system water quality issues. I am huge fan of R and the tidyverse and all that it includes. I am also a huge Arsenal fan (aka gooner, hence the blog name). 
+
+Please feel free to follow me on  [https://twitter.com/tb_goonR](twitter) and connect with me on [https://www.linkedin.com/in/tyler-bradley-68707292/](LinkedIn). I would love to connect with other data scientists! 
+
+This website was built with the [https://github.com/rstudio/blogdown](blogdown) R package. 
