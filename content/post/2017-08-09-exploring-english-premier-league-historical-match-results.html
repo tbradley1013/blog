@@ -1,7 +1,7 @@
 ---
 title: Exploring English Premier League Historical Match Results
 author: Tyler Bradley
-date: '2017-08-09'
+date: '2017-08-10'
 slug: epl-opening-weekend
 categories:
   - R
@@ -15,8 +15,8 @@ tags:
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>I was listening to <a href = "https://twitter.com/codinghorror">Jeff Atwood’s</a> interview on the podcast <a href="http://developeronfire.com/">Developer on Fire</a> and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about <a href="https://twitter.com/hashtag/rstats">#rstats</a> but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie’s <a href="https://github.com/rstudio/blogdown">blogdown</a>, I was able to set up the basic webpage pretty easily too.</p>
-<p>So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on <a href="https://twitter.com/tb_goonR">twitter</a> (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)</p>
+<p>I was listening to <a href="https://twitter.com/codinghorror">Jeff Atwood’s</a> interview on the podcast <a href="http://developeronfire.com/">Developer on Fire</a> and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about <a href="https://twitter.com/hashtag/rstats">#rstats</a> but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie’s <a href="https://github.com/rstudio/blogdown">blogdown</a>, I was able to set up the basic webpage pretty easily too.</p>
+<p>So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on <a href="twitter%20https://twitter.com/tb_goonR">twitter</a> (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)</p>
 </div>
 <div id="general-data-analysis" class="section level1">
 <h1>General Data Analysis</h1>
@@ -31,12 +31,40 @@ suppressWarnings(suppressPackageStartupMessages({
   library(ggjoy)
   library(dplyr)
 }))</code></pre>
-<p>First, we will load in the data. All of the data used in this analysis is from <a href="www.football-data.co.uk" class="uri">www.football-data.co.uk</a>, and can be found on <a href="https://github.com/tbradley1013/epl">my github page</a> under the epl repository.</p>
+<p>First, we will load in the data. All of the data used in this analysis is from &lt;www.football-data.co.uk&gt;, and can be found on <a href="https://github.com/tbradley1013/epl">my github page</a> under the epl repository.</p>
 <pre class="r"><code>files &lt;- list.files(path = &quot;epl_results&quot;, full.names = TRUE)
 
 raw_data &lt;- map(files, read.csv)</code></pre>
-<p>Below is the column information provided by the website: * Div = League Division * Date = Match Date (dd/mm/yy) * HomeTeam = Home Team * AwayTeam = Away Team * FTHG and HG = Full Time Home Team Goals * FTAG and AG = Full Time Away Team Goals * FTR and Res = Full Time Result (H=Home Win, D=Draw, A=Away Win) * HTHG = Half Time Home Team Goals * HTAG = Half Time Away Team Goals * HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)</p>
-<p>Match Statistics (where available) * Attendance = Crowd Attendance * Referee = Match Referee * HS = Home Team Shots * AS = Away Team Shots * HST = Home Team Shots on Target * AST = Away Team Shots on Target * HHW = Home Team Hit Woodwork * AHW = Away Team Hit Woodwork * HC = Home Team Corners * AC = Away Team Corners * HF = Home Team Fouls Committed * AF = Away Team Fouls Committed * HO = Home Team Offsides * AO = Away Team Offsides * HY = Home Team Yellow Cards * AY = Away Team Yellow Cards * HR = Home Team Red Cards * AR = Away Team Red Cards</p>
+<p>Below is the column information provided by the website:</p>
+<pre><code>* Div = League Division
+* Date = Match Date (dd/mm/yy)
+* HomeTeam = Home Team
+* AwayTeam = Away Team
+* FTHG = Full Time Home Team Goals
+* FTAG = Full Time Away Team Goals
+* FTR = Full Time Result (H=Home Win, D=Draw, A=Away Win) 
+* HTHG = Half Time Home Team Goals 
+* HTAG = Half Time Away Team Goals 
+* HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)</code></pre>
+<p>Match Statistics (where available):</p>
+<pre><code>* Attendance = Crowd Attendance
+* Referee = Match Referee
+* HS = Home Team Shots
+* AS = Away Team Shots
+* HST = Home Team Shots on Target
+* AST = Away Team Shots on Target
+* HHW = Home Team Hit Woodwork
+* AHW = Away Team Hit Woodwork
+* HC = Home Team Corners
+* AC = Away Team Corners
+* HF = Home Team Fouls Committed
+* AF = Away Team Fouls Committed
+* HO = Home Team Offsides
+* AO = Away Team Offsides
+* HY = Home Team Yellow Cards
+* AY = Away Team Yellow Cards
+* HR = Home Team Red Cards
+* AR = Away Team Red Cards</code></pre>
 <p>There are more columns provided in the raw data set that have to do with betting odds, however, we will remove them as they are not going to be used in this analysis. Additionally, only two seasons data has attendance recorded, so this will be removed. Looking through the data, all of the data sets for the 2000/2001 through the 2016/2017 seasons have all of the match statistics listed above. The data sets prior to the 2000/2001 data set only have the general data and none of the match statistics. Because of these differences in available data we will only use the general statistics for the first part of this analysis.</p>
 <pre class="r"><code>data_general &lt;- map(raw_data, function(x){
   output &lt;- x %&gt;%
@@ -51,20 +79,21 @@ raw_data &lt;- map(files, read.csv)</code></pre>
 
 data &lt;- do.call(rbind, data_general) %&gt;% as.tibble()</code></pre>
 <pre class="r"><code>data </code></pre>
-<pre class="r"><code># # A tibble: 8,360 x 11
-#       Div       Date    HomeTeam       AwayTeam  FTHG  FTAG    FTR  HTHG  HTAG    HTR season
-#    &lt;fctr&gt;     &lt;date&gt;      &lt;fctr&gt;         &lt;fctr&gt; &lt;int&gt; &lt;int&gt; &lt;fctr&gt; &lt;int&gt; &lt;int&gt; &lt;fctr&gt;  &lt;dbl&gt;
-#  1     E0 1995-08-19 Aston Villa     Man United     3     1      H     3     0      H   1996
-#  2     E0 1995-08-19   Blackburn            QPR     1     0      H     1     0      H   1996
-#  3     E0 1995-08-19     Chelsea        Everton     0     0      D     0     0      D   1996
-#  4     E0 1995-08-19   Liverpool Sheffield Weds     1     0      H     0     0      D   1996
-#  5     E0 1995-08-19    Man City      Tottenham     1     1      D     0     1      A   1996
-#  6     E0 1995-08-19   Newcastle       Coventry     3     0      H     1     0      H   1996
-#  7     E0 1995-08-19 Southampton  Nott&#39;m Forest     3     4      A     1     3      A   1996
-#  8     E0 1995-08-19    West Ham          Leeds     1     2      A     1     0      H   1996
-#  9     E0 1995-08-19   Wimbledon         Bolton     3     2      H     2     2      D   1996
-# 10     E0 1995-08-20     Arsenal  Middlesbrough     1     1      D     1     1      D   1996
-# # ... with 8,350 more rows</code></pre>
+<pre><code>## # A tibble: 8,360 x 11
+##       Div       Date    HomeTeam       AwayTeam  FTHG  FTAG    FTR  HTHG
+##    &lt;fctr&gt;     &lt;date&gt;      &lt;fctr&gt;         &lt;fctr&gt; &lt;int&gt; &lt;int&gt; &lt;fctr&gt; &lt;int&gt;
+##  1     E0 1995-08-19 Aston Villa     Man United     3     1      H     3
+##  2     E0 1995-08-19   Blackburn            QPR     1     0      H     1
+##  3     E0 1995-08-19     Chelsea        Everton     0     0      D     0
+##  4     E0 1995-08-19   Liverpool Sheffield Weds     1     0      H     0
+##  5     E0 1995-08-19    Man City      Tottenham     1     1      D     0
+##  6     E0 1995-08-19   Newcastle       Coventry     3     0      H     1
+##  7     E0 1995-08-19 Southampton  Nott&#39;m Forest     3     4      A     1
+##  8     E0 1995-08-19    West Ham          Leeds     1     2      A     1
+##  9     E0 1995-08-19   Wimbledon         Bolton     3     2      H     2
+## 10     E0 1995-08-20     Arsenal  Middlesbrough     1     1      D     1
+## # ... with 8,350 more rows, and 3 more variables: HTAG &lt;int&gt;, HTR &lt;fctr&gt;,
+## #   season &lt;dbl&gt;</code></pre>
 <p>Now that the data from the csv files is all in one data frame, we can do some manipulation to get it into a more tidy format.</p>
 <pre class="r"><code>data_tidy &lt;- data %&gt;%
   gather(key = &quot;venue&quot;, value = team, HomeTeam:AwayTeam) %&gt;% 
@@ -97,28 +126,29 @@ data &lt;- do.call(rbind, data_general) %&gt;% as.tibble()</code></pre>
   ungroup()
 
 data_tidy</code></pre>
-<pre class="r"><code># # A tibble: 16,720 x 13
-# # Groups:   season, team [440]
-#      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA points_earned points
-#    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt;         &lt;dbl&gt;  &lt;dbl&gt;
-#  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3     0             3      3
-#  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1     0             3      3
-#  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0     0             1      1
-#  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0     0             3      3
-#  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0     1             1      1
-#  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1     0             3      3
-#  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1     3             0      0
-#  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0
-#  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3
-# 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0
-# # ... with 16,710 more rows</code></pre>
+<pre><code>## # A tibble: 16,720 x 13
+##      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF
+##    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt;
+##  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3
+##  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1
+##  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0
+##  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0
+##  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0
+##  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1
+##  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1
+##  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1
+##  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2
+## 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0
+## # ... with 16,710 more rows, and 3 more variables: HTGA &lt;int&gt;,
+## #   points_earned &lt;dbl&gt;, points &lt;dbl&gt;</code></pre>
 <p>To ensure that our tidying did not create any missing values, we can use the <code>summarise_all()</code> function.</p>
 <pre class="r"><code>data_tidy %&gt;% 
   summarise_all(function(x) sum(is.na(x)))</code></pre>
-<pre class="r"><code># # A tibble: 1 x 11
-#     Div season  Date  team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA
-#   &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
-# 1     0      0     0     0     0     0     0     0     0     0     0</code></pre>
+<pre><code>## # A tibble: 1 x 13
+##     Div season  Date  team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA
+##   &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;
+## 1     0      0     0     0     0     0     0     0     0     0     0
+## # ... with 2 more variables: points_earned &lt;int&gt;, points &lt;int&gt;</code></pre>
 <p>Now that we know that the data is in a tidy format, we can begin exploring the data. As an Arsenal fan, I think we should start by looking at how Arsenal has done each year.</p>
 <pre class="r"><code>data_tidy %&gt;%
   filter(team == &quot;Arsenal&quot;,
@@ -136,7 +166,7 @@ data_tidy</code></pre>
   labs(x = &quot;&quot;, 
        y = &quot;Point Tally&quot;,
        title = &quot;Arsenal Point Tally over the course of each season from the 1995/1996 season to the 2005/2006 season&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-1-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-1-1.png" width="768" /></p>
 <pre class="r"><code>data_tidy %&gt;%
   filter(team == &quot;Arsenal&quot;,
          season &gt;= 2007) %&gt;%
@@ -154,7 +184,7 @@ data_tidy</code></pre>
   labs(x = &quot;&quot;, 
        y = &quot;Point Tally&quot;,
        title = &quot;Arsenal Point Tally over the course of each season from the 2006/2007 season to the 2016/2017 season&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-2-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/arsenal-points-graph-2-1.png" width="768" /></p>
 <p>From these graphs, it looks like Arsenal follow a similar pattern every year, which is not surprising since the 2017 season was the first in Arsene Wenger’s tenure that they have not finished in the top 4. Looking at the plot for the 2017 season, it is clear that the period of the season that killed their chances of finishing in the top 4 was the stretch of games between February and March where their point increase flat lined. Let’s now take a look at team’s average finishing point total.</p>
 <pre class="r"><code>season_ending &lt;- data_tidy %&gt;%
   group_by(season, team) %&gt;%
@@ -167,20 +197,20 @@ data_tidy</code></pre>
   ungroup()
   
 season_ending</code></pre>
-<pre class="r"><code># # A tibble: 440 x 6
-#    season        team final_points final_goals_for final_goals_against table_position
-#     &lt;dbl&gt;       &lt;chr&gt;        &lt;dbl&gt;           &lt;int&gt;               &lt;int&gt;          &lt;dbl&gt;
-#  1   1996     Arsenal           63              49                  32              4
-#  2   1996 Aston Villa           63              52                  35              4
-#  3   1996   Blackburn           61              61                  47              7
-#  4   1996      Bolton           29              39                  71             19
-#  5   1996     Chelsea           50              46                  44             10
-#  6   1996    Coventry           38              42                  60             17
-#  7   1996     Everton           61              64                  44              7
-#  8   1996       Leeds           43              40                  57             12
-#  9   1996   Liverpool           71              70                  34              2
-# 10   1996    Man City           38              33                  58             17
-# # ... with 430 more rows</code></pre>
+<pre><code>## # A tibble: 440 x 6
+##    season        team final_points final_goals_for final_goals_against
+##     &lt;dbl&gt;       &lt;chr&gt;        &lt;dbl&gt;           &lt;int&gt;               &lt;int&gt;
+##  1   1996     Arsenal           63              49                  32
+##  2   1996 Aston Villa           63              52                  35
+##  3   1996   Blackburn           61              61                  47
+##  4   1996      Bolton           29              39                  71
+##  5   1996     Chelsea           50              46                  44
+##  6   1996    Coventry           38              42                  60
+##  7   1996     Everton           61              64                  44
+##  8   1996       Leeds           43              40                  57
+##  9   1996   Liverpool           71              70                  34
+## 10   1996    Man City           38              33                  58
+## # ... with 430 more rows, and 1 more variables: table_position &lt;dbl&gt;</code></pre>
 <p>From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest number of goals for, and then by head to head match-ups. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won’t worry about fixing these ties.</p>
 <pre class="r"><code>season_ending_stats &lt;- season_ending %&gt;%
   group_by(team) %&gt;%
@@ -195,20 +225,22 @@ season_ending</code></pre>
             num_seasons = n())
 
 season_ending_stats</code></pre>
-<pre class="r"><code># # A tibble: 46 x 10
-#           team avg_final_points sd_final_points avg_final_goals_for sd_final_goals_for avg_final_goals_against sd_final_goals_against
-#          &lt;chr&gt;            &lt;dbl&gt;           &lt;dbl&gt;               &lt;dbl&gt;              &lt;dbl&gt;                   &lt;dbl&gt;                  &lt;dbl&gt;
-#  1     Arsenal               75               7                  71                  9                      36                      7
-#  2 Aston Villa               50              11                  46                  9                      50                     11
-#  3    Barnsley               35             NaN                  37                NaN                      82                    NaN
-#  4  Birmingham               43               7                  39                  6                      51                      6
-#  5   Blackburn               48              10                  48                  8                      52                      9
-#  6   Blackpool               39             NaN                  55                NaN                      78                    NaN
-#  7      Bolton               44               9                  44                  5                      57                     10
-#  8 Bournemouth               44               3                  50                  7                      67                      0
-#  9    Bradford               31               7                  34                  6                      69                      1
-# 10     Burnley               34               5                  36                  7                      63                     16
-# # ... with 36 more rows, and 3 more variables: avg_table_position &lt;dbl&gt;, sd_table_poisiton &lt;dbl&gt;, num_seasons &lt;int&gt;</code></pre>
+<pre><code>## # A tibble: 46 x 10
+##           team avg_final_points sd_final_points avg_final_goals_for
+##          &lt;chr&gt;            &lt;dbl&gt;           &lt;dbl&gt;               &lt;dbl&gt;
+##  1     Arsenal               75               7                  71
+##  2 Aston Villa               50              11                  46
+##  3    Barnsley               35             NaN                  37
+##  4  Birmingham               43               7                  39
+##  5   Blackburn               48              10                  48
+##  6   Blackpool               39             NaN                  55
+##  7      Bolton               44               9                  44
+##  8 Bournemouth               44               3                  50
+##  9    Bradford               31               7                  34
+## 10     Burnley               34               5                  36
+## # ... with 36 more rows, and 6 more variables: sd_final_goals_for &lt;dbl&gt;,
+## #   avg_final_goals_against &lt;dbl&gt;, sd_final_goals_against &lt;dbl&gt;,
+## #   avg_table_position &lt;dbl&gt;, sd_table_poisiton &lt;dbl&gt;, num_seasons &lt;int&gt;</code></pre>
 <p>As we can see from the tibble summary, there are several teams that have only been in the premier league for a single year, resulting in NaN values for the standard deviation columns. To avoid cluttering the next graph, we will remove any teams that have not been in the premier league for at least 10 of the 22 seasons being analyzed.</p>
 <pre class="r"><code>season_ending_stats %&gt;%
   filter(num_seasons &gt;= 10) %&gt;%
@@ -229,7 +261,7 @@ season_ending_stats</code></pre>
        y = &quot;Final Points&quot;,
        title = &quot;Average Final Points from 1995/1996 season to 2016/2017 season&quot;,
        subtitle = &quot;Only teams with 10 or more seasons in the EPL were included&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/bar-graph-season-stats-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/bar-graph-season-stats-1.png" width="672" /></p>
 <p>It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically guarantees a season that is safe from relegation. However, for the teams with the lower average finally point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone.</p>
 <p>Now, it will be interesting to see how these teams final point tallies will look on the new joyplots from the <code>ggjoy</code> package.</p>
 <pre class="r"><code>season_ending %&gt;%
@@ -249,7 +281,7 @@ season_ending_stats</code></pre>
   labs(x = &quot;Final Points&quot;,
        y = &quot;Team&quot;,
        title = &quot;Joyplot showing EPL teams&#39; individual season final point tally distribution&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/final-points-joyplot-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/final-points-joyplot-1.png" width="672" /></p>
 <p>The joyplot confirms the conclusions drawn from the bar chart. Manchester United and Arsenal have the highest final point distribution and both have close to a bell curve. However, Chelsea and Manchester City both have much wider distributions as they have much more ups and downs over the past 22 years.</p>
 </div>
 <div id="looking-at-opening-weekend-results" class="section level1">
@@ -274,21 +306,25 @@ season_ending_stats</code></pre>
   ungroup()
 
 opening_games</code></pre>
-<pre class="r"><code># # A tibble: 440 x 22
-#      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA points_earned points final_points final_goals_for
-#    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt;         &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;           &lt;int&gt;
-#  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3     0             3      3           63              52
-#  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1     0             3      3           61              61
-#  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0     0             1      1           50              46
-#  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0     0             3      3           71              70
-#  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0     1             1      1           38              33
-#  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1     0             3      3           78              66
-#  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1     3             0      0           38              34
-#  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0           51              43
-#  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3           41              55
-# 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0           82              73
-# # ... with 430 more rows, and 7 more variables: final_goals_against &lt;int&gt;, game &lt;dbl&gt;, table_position &lt;dbl&gt;, final_points_last &lt;dbl&gt;,
-# #   final_goals_for_last &lt;int&gt;, final_goals_against_last &lt;int&gt;, final_table_position_last &lt;dbl&gt;</code></pre>
+<pre><code>## # A tibble: 440 x 22
+##      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF
+##    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt;
+##  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3
+##  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1
+##  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0
+##  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0
+##  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0
+##  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1
+##  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1
+##  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1
+##  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2
+## 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0
+## # ... with 430 more rows, and 12 more variables: HTGA &lt;int&gt;,
+## #   points_earned &lt;dbl&gt;, points &lt;dbl&gt;, final_points &lt;dbl&gt;,
+## #   final_goals_for &lt;int&gt;, final_goals_against &lt;int&gt;, game &lt;dbl&gt;,
+## #   table_position &lt;dbl&gt;, final_points_last &lt;dbl&gt;,
+## #   final_goals_for_last &lt;int&gt;, final_goals_against_last &lt;int&gt;,
+## #   final_table_position_last &lt;dbl&gt;</code></pre>
 <p>Now that we have a data set with all of the teams opening games results, we can look at some of the factors that could influence opening weekend results. First let’s look at how home field advantage helps teams on opening weekend</p>
 <pre class="r"><code>opening_home_adv &lt;- opening_games %&gt;%
   group_by(venue) %&gt;%
@@ -297,11 +333,11 @@ opening_games</code></pre>
             perc_D = round((sum(FTR == &quot;D&quot;)/n()) * 100, 1))
 
 opening_home_adv</code></pre>
-<pre class="r"><code># # A tibble: 2 x 4
-#   venue perc_W perc_L perc_D
-#   &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-# 1  Away   30.5   42.3   27.3
-# 2  Home   41.8   30.9   27.3</code></pre>
+<pre><code>## # A tibble: 2 x 4
+##   venue perc_W perc_L perc_D
+##   &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1  Away   30.5   42.3   27.3
+## 2  Home   41.8   30.9   27.3</code></pre>
 <p>It looks like the home teams have better luck on the first weekend of the season than the away team. Let’s look at home this compares with the home field advantage of all games to see if there is any difference for the first week.</p>
 <pre class="r"><code>home_adv &lt;- data_tidy %&gt;%
   group_by(venue) %&gt;%
@@ -310,11 +346,11 @@ opening_home_adv</code></pre>
             perc_D = round((sum(FTR == &quot;D&quot;)/n()) * 100, 1))
 
 home_adv</code></pre>
-<pre class="r"><code># # A tibble: 2 x 4
-#   venue perc_W perc_L perc_D
-#   &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-# 1  Away   27.5   46.5     26
-# 2  Home   46.5   27.5     26</code></pre>
+<pre><code>## # A tibble: 2 x 4
+##   venue perc_W perc_L perc_D
+##   &lt;chr&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1  Away   27.5   46.5     26
+## 2  Home   46.5   27.5     26</code></pre>
 <p>It looks like the away team actually fairs slightly better on opening weekend than during the rest of the season. Let’s now take a look at the winning percentage by year for the home teams and the away teams.</p>
 <pre class="r"><code>opening_games %&gt;%
   group_by(season, venue) %&gt;%
@@ -340,7 +376,7 @@ home_adv</code></pre>
   labs(x = &quot;Year&quot;,
        y = &quot;Percentage of Results by Year&quot;,
        title = &quot;The Percent of Results (Win, Draw, Loss) per Season for Home Teams on Opening Weekend&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/home-adv-graph-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/home-adv-graph-1.png" width="672" /></p>
 <p>It looks like the winning percentage for home teams fluctuates and there is no clear trend as to whether being home on opening weekend provides any benefit. Since 2014, the home teams have a higher losing percentage than winning percentage. Perhaps, in recent years, there has been some shift that has made playing away from home more desirable on opening weekend. Likely this is just random, however, and there is no overall benefit to being home or away. While there does not appear to be any overall inferences that can be made from playing home or away on opening weekend, looking at the winning percentage for home and away opening games for the individual teams may provide some interesting results.</p>
 <pre class="r"><code>home_adv_team &lt;- opening_games %&gt;%
   group_by(team) %&gt;%
@@ -369,20 +405,6 @@ home_adv_team</code></pre>
 ##  9     Chelsea  Away                 56               9
 ## 10     Chelsea  Home                 77              13
 ## # ... with 26 more rows</code></pre>
-<pre class="r"><code># # A tibble: 36 x 4
-#           team venue winning_percentage num_games_total
-#          &lt;chr&gt; &lt;chr&gt;              &lt;dbl&gt;           &lt;int&gt;
-#  1     Arsenal  Away                 43               7
-#  2     Arsenal  Home                 60              15
-#  3 Aston Villa  Away                 31              13
-#  4 Aston Villa  Home                 50               8
-#  5   Blackburn  Away                 40               5
-#  6   Blackburn  Home                 40              10
-#  7      Bolton  Away                 43               7
-#  8      Bolton  Home                 50               6
-#  9     Chelsea  Away                 56               9
-# 10     Chelsea  Home                 77              13
-# # ... with 26 more rows</code></pre>
 <pre class="r"><code>home_adv_team %&gt;%
   arrange(-winning_percentage) %&gt;%
   mutate(team = factor(team, unique(team)),
@@ -401,7 +423,7 @@ home_adv_team</code></pre>
        y = &quot;Winning Percentage&quot;,
        title = &quot;Winning Percentage for Teams on Opening Weekend both Home and Away&quot;,
        subtitle = &quot;Only teams with more than 10 seasons in the premier league were included&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/unnamed-chunk-2-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>This figure seems to provide much more insight into how home field advantage can impact teams. For example, Arsenal have a 60% winning percentage at home on opening weekend, and their opponent this weekend, Leicester City, have not won a opening game away from home in the premier league since 1996. This is a very positive sign for the gunners as their match is being played at the Emirates Stadium (Arsenal’s Home Field). Chelsea have a winning percentage in the high 70s when they play their opening game at home, as they do this year. That fact seems promising (unfortunately) for the blues, as their opening match this year is at home. Other noticeable impacts of home field advantage are New Castle United and Sunderland. New Castle have a home winning percentage of 50% on opening weekend, but only have a 10% winning percentage for away games on opening weekend. Fortunately for them, they are also playing at home this year. Unfortunately for them, they are matched up with West Ham who don’t have much issue playing on the road opening weekend, with a 40% winning percentage when away from home. Sunderland, similarly has an average home winning percentage of just under 40% for opening weekend, but have a winning percentage of only just north of 10% when playing away from home. However, Sunderland were relegated last season, so maybe they will have better luck in the Championship. Several teams seem not to be impacted by whether or not they play at home on opening weekend. Manchester United and Manchester City both only see a slight dip in winning percentage when away from home, and Blackburn has a 40% winning percentage when both home and away on opening weekend.</p>
 <p>Let’s take a look at each team’s overall winning percentage on opening weekend.</p>
 <pre class="r"><code>opening_games %&gt;%
@@ -429,7 +451,7 @@ home_adv_team</code></pre>
        y = &quot;Winning Percentage&quot;,
        title = &quot;Winning Percentage for Teams on Opening Weekend&quot;,
        subtitle = &quot;Only teams with more than 10 seasons in the premier league were included&quot;)</code></pre>
-<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/opening-win-perc-1.png" width="800" /></p>
+<p><img src="/post/2017-08-09-exploring-english-premier-league-historical-match-results_files/figure-html/opening-win-perc-1.png" width="672" /></p>
 <p>It looks like the results follow a similar pattern to the previous figure, as expected. Chelsea and Manchester United have the best winning percentages (&gt;60%) on opening weekend, with Arsenal, Liverpool, Manchester City, and West Ham all close behind in the 50% range.</p>
 </div>
 <div id="conclusions" class="section level1">

@@ -96,30 +96,14 @@ data <- do.call(rbind, data_general) %>% as.tibble()
 ```
 
 
-```{r show-combined, results = "hide"}
+```{r show-combined}
 data 
 ```
 
-```{r output-show-combined}
-# # A tibble: 8,360 x 11
-#       Div       Date    HomeTeam       AwayTeam  FTHG  FTAG    FTR  HTHG  HTAG    HTR season
-#    <fctr>     <date>      <fctr>         <fctr> <int> <int> <fctr> <int> <int> <fctr>  <dbl>
-#  1     E0 1995-08-19 Aston Villa     Man United     3     1      H     3     0      H   1996
-#  2     E0 1995-08-19   Blackburn            QPR     1     0      H     1     0      H   1996
-#  3     E0 1995-08-19     Chelsea        Everton     0     0      D     0     0      D   1996
-#  4     E0 1995-08-19   Liverpool Sheffield Weds     1     0      H     0     0      D   1996
-#  5     E0 1995-08-19    Man City      Tottenham     1     1      D     0     1      A   1996
-#  6     E0 1995-08-19   Newcastle       Coventry     3     0      H     1     0      H   1996
-#  7     E0 1995-08-19 Southampton  Nott'm Forest     3     4      A     1     3      A   1996
-#  8     E0 1995-08-19    West Ham          Leeds     1     2      A     1     0      H   1996
-#  9     E0 1995-08-19   Wimbledon         Bolton     3     2      H     2     2      D   1996
-# 10     E0 1995-08-20     Arsenal  Middlesbrough     1     1      D     1     1      D   1996
-# # ... with 8,350 more rows
-```
 
 Now that the data from the csv files is all in one data frame, we can do some manipulation to get it into a more tidy format. 
 
-```{r tidy-data, results = "hide"}
+```{r tidy-data}
 data_tidy <- data %>%
   gather(key = "venue", value = team, HomeTeam:AwayTeam) %>% 
   arrange(Date) %>%
@@ -153,41 +137,18 @@ data_tidy <- data %>%
 data_tidy
 ```
 
-```{r show-tidy-data}
-# # A tibble: 16,720 x 13
-# # Groups:   season, team [440]
-#      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA points_earned points
-#    <chr>  <dbl>     <date>       <chr> <chr> <chr> <int> <int> <chr> <int> <int>         <dbl>  <dbl>
-#  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3     0             3      3
-#  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1     0             3      3
-#  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0     0             1      1
-#  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0     0             3      3
-#  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0     1             1      1
-#  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1     0             3      3
-#  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1     3             0      0
-#  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0
-#  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3
-# 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0
-# # ... with 16,710 more rows
-```
 
 To ensure that our tidying did not create any missing values, we can use the `summarise_all()` function.
 
-```{r check-NA, results = "hide"}
+```{r check-NA}
 data_tidy %>% 
   summarise_all(function(x) sum(is.na(x)))
 ```
 
-```{r show-check-NA}
-# # A tibble: 1 x 11
-#     Div season  Date  team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA
-#   <int>  <int> <int> <int> <int> <int> <int> <int> <int> <int> <int>
-# 1     0      0     0     0     0     0     0     0     0     0     0
-```
 
 Now that we know that the data is in a tidy format, we can begin exploring the data. As an Arsenal fan, I think we should start by looking at how Arsenal has done each year. 
 
-```{r arsenal-points-graph-1, fig.width = 8, fig.height = 4}
+```{r arsenal-points-graph-1, fig.width = 8, fig.height = 6}
 data_tidy %>%
   filter(team == "Arsenal",
          season < 2007) %>%
@@ -207,7 +168,7 @@ data_tidy %>%
 
 ```
 
-```{r arsenal-points-graph-2, fig.width = 8, fig.height = 4}
+```{r arsenal-points-graph-2, fig.width = 8, fig.height = 6}
 data_tidy %>%
   filter(team == "Arsenal",
          season >= 2007) %>%
@@ -230,7 +191,7 @@ data_tidy %>%
 
 From these graphs, it looks like Arsenal follow a similar pattern every year, which is not surprising since the 2017 season was the first in Arsene Wenger's tenure that they have not finished in the top 4. Looking at the plot for the 2017 season, it is clear that the period of the season that killed their chances of finishing in the top 4 was the stretch of games between February and March where their point increase flat lined. Let's now take a look at team's average finishing point total.
 
-```{r season-ending-points, results = "hide"}
+```{r season-ending-points}
 season_ending <- data_tidy %>%
   group_by(season, team) %>%
   summarise(final_points = max(points), 
@@ -244,26 +205,10 @@ season_ending <- data_tidy %>%
 season_ending
 ```
 
-```{r show-season-ending-points}
-# # A tibble: 440 x 6
-#    season        team final_points final_goals_for final_goals_against table_position
-#     <dbl>       <chr>        <dbl>           <int>               <int>          <dbl>
-#  1   1996     Arsenal           63              49                  32              4
-#  2   1996 Aston Villa           63              52                  35              4
-#  3   1996   Blackburn           61              61                  47              7
-#  4   1996      Bolton           29              39                  71             19
-#  5   1996     Chelsea           50              46                  44             10
-#  6   1996    Coventry           38              42                  60             17
-#  7   1996     Everton           61              64                  44              7
-#  8   1996       Leeds           43              40                  57             12
-#  9   1996   Liverpool           71              70                  34              2
-# 10   1996    Man City           38              33                  58             17
-# # ... with 430 more rows
-```
 
 From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest number of goals for, and then by head to head match-ups. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won't worry about fixing these ties. 
 
-```{r season-ending-summary, results = "hide"}
+```{r season-ending-summary }
 season_ending_stats <- season_ending %>%
   group_by(team) %>%
   summarise(avg_final_points = round(mean(final_points), 0), 
@@ -278,26 +223,11 @@ season_ending_stats <- season_ending %>%
 
 season_ending_stats
 ```
-```{r show-season-ending-stats}
-# # A tibble: 46 x 10
-#           team avg_final_points sd_final_points avg_final_goals_for sd_final_goals_for avg_final_goals_against sd_final_goals_against
-#          <chr>            <dbl>           <dbl>               <dbl>              <dbl>                   <dbl>                  <dbl>
-#  1     Arsenal               75               7                  71                  9                      36                      7
-#  2 Aston Villa               50              11                  46                  9                      50                     11
-#  3    Barnsley               35             NaN                  37                NaN                      82                    NaN
-#  4  Birmingham               43               7                  39                  6                      51                      6
-#  5   Blackburn               48              10                  48                  8                      52                      9
-#  6   Blackpool               39             NaN                  55                NaN                      78                    NaN
-#  7      Bolton               44               9                  44                  5                      57                     10
-#  8 Bournemouth               44               3                  50                  7                      67                      0
-#  9    Bradford               31               7                  34                  6                      69                      1
-# 10     Burnley               34               5                  36                  7                      63                     16
-# # ... with 36 more rows, and 3 more variables: avg_table_position <dbl>, sd_table_poisiton <dbl>, num_seasons <int>
-```
+
 
 As we can see from the tibble summary, there are several teams that have only been in the premier league for a single year, resulting in NaN values for the standard deviation columns. To avoid cluttering the next graph, we will remove any teams that have not been in the premier league for at least 10 of the 22 seasons being analyzed. 
 
-```{r bar-graph-season-stats, fig.width = 8, fig.height = 4}
+```{r bar-graph-season-stats, fig.width = 7, fig.height = 4}
 season_ending_stats %>%
   filter(num_seasons >= 10) %>%
   arrange(-avg_final_points) %>%
@@ -323,7 +253,7 @@ season_ending_stats %>%
 It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically guarantees a season that is safe from relegation. However, for the teams with the lower average finally point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone. 
 
 Now, it will be interesting to see how these teams final point tallies will look on the new joyplots from the `ggjoy` package.
-```{r final-points-joyplot, fig.width = 8, fig.height = 8, message = FALSE}
+```{r final-points-joyplot, fig.width = 7, fig.height = 8, message = FALSE}
 season_ending %>%
   group_by(team) %>%
   mutate(num_seasons = n(),
@@ -349,7 +279,7 @@ The joyplot confirms the conclusions drawn from the bar chart. Manchester United
 #Looking at opening weekend results
 Since this weekend marks the start of the 2017/2018 season, it will be interesting to see how teams have fared over the last 22 seasons. First, we will start by filtering for the first game of the season. 
 
-```{r first-game-results, results = "hide"}
+```{r first-game-results }
 opening_games <- data_tidy %>%
   group_by(season, team) %>%
   mutate(final_points = max(points), 
@@ -371,28 +301,10 @@ opening_games <- data_tidy %>%
 opening_games
 ```
 
-```{r show-first-game-results}
-# # A tibble: 440 x 22
-#      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF  HTGA points_earned points final_points final_goals_for
-#    <chr>  <dbl>     <date>       <chr> <chr> <chr> <int> <int> <chr> <int> <int>         <dbl>  <dbl>        <dbl>           <int>
-#  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3     0             3      3           63              52
-#  2    E0   1996 1995-08-19   Blackburn  Home     W     1     0     W     1     0             3      3           61              61
-#  3    E0   1996 1995-08-19     Chelsea  Home     D     0     0     D     0     0             1      1           50              46
-#  4    E0   1996 1995-08-19   Liverpool  Home     W     1     0     D     0     0             3      3           71              70
-#  5    E0   1996 1995-08-19    Man City  Home     D     1     1     L     0     1             1      1           38              33
-#  6    E0   1996 1995-08-19   Newcastle  Home     W     3     0     W     1     0             3      3           78              66
-#  7    E0   1996 1995-08-19 Southampton  Home     L     3     4     L     1     3             0      0           38              34
-#  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1     0             0      0           51              43
-#  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2     2             3      3           41              55
-# 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0     3             0      0           82              73
-# # ... with 430 more rows, and 7 more variables: final_goals_against <int>, game <dbl>, table_position <dbl>, final_points_last <dbl>,
-# #   final_goals_for_last <int>, final_goals_against_last <int>, final_table_position_last <dbl>
-```
-
 
 Now that we have a data set with all of the teams opening games results, we can look at some of the factors that could influence opening weekend results. First let's look at how home field advantage helps teams on opening weekend
 
-```{r home-adv-opening, results = "hide"}
+```{r home-adv-opening }
 opening_home_adv <- opening_games %>%
   group_by(venue) %>%
   summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
@@ -401,17 +313,11 @@ opening_home_adv <- opening_games %>%
 
 opening_home_adv
 ```
-```{r show-home-adv-opening}
-# # A tibble: 2 x 4
-#   venue perc_W perc_L perc_D
-#   <chr>  <dbl>  <dbl>  <dbl>
-# 1  Away   30.5   42.3   27.3
-# 2  Home   41.8   30.9   27.3
-```
+
 
 It looks like the home teams have better luck on the first weekend of the season than the away team. Let's look at home this compares with the home field advantage of all games to see if there is any difference for the first week.
 
-```{r home-adv-general, results = "hide"}
+```{r home-adv-general }
 home_adv <- data_tidy %>%
   group_by(venue) %>%
   summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
@@ -420,17 +326,11 @@ home_adv <- data_tidy %>%
 
 home_adv
 ```
-```{r show-home-adv-general}
-# # A tibble: 2 x 4
-#   venue perc_W perc_L perc_D
-#   <chr>  <dbl>  <dbl>  <dbl>
-# 1  Away   27.5   46.5     26
-# 2  Home   46.5   27.5     26
-```
+
 
 It looks like the away team actually fairs slightly better on opening weekend than during the rest of the season. Let's now take a look at the winning percentage by year for the home teams and the away teams. 
 
-```{r home-adv-graph, fig.width = 8, fig.height = 4}
+```{r home-adv-graph, fig.width = 7, fig.height = 4}
 opening_games %>%
   group_by(season, venue) %>%
   summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
@@ -476,24 +376,9 @@ home_adv_team <- opening_games %>%
 
 home_adv_team
 ```
-```{r show-home-adv-by-team}
-# # A tibble: 36 x 4
-#           team venue winning_percentage num_games_total
-#          <chr> <chr>              <dbl>           <int>
-#  1     Arsenal  Away                 43               7
-#  2     Arsenal  Home                 60              15
-#  3 Aston Villa  Away                 31              13
-#  4 Aston Villa  Home                 50               8
-#  5   Blackburn  Away                 40               5
-#  6   Blackburn  Home                 40              10
-#  7      Bolton  Away                 43               7
-#  8      Bolton  Home                 50               6
-#  9     Chelsea  Away                 56               9
-# 10     Chelsea  Home                 77              13
-# # ... with 26 more rows
-```
 
-```{r, fig.width = 8, fig.height = 4}
+
+```{r, fig.width = 7, fig.height = 4}
 home_adv_team %>%
   arrange(-winning_percentage) %>%
   mutate(team = factor(team, unique(team)),
@@ -519,7 +404,7 @@ This figure seems to provide much more insight into how home field advantage can
 
 Let's take a look at each team's overall winning percentage on opening weekend.
 
-```{r opening-win-perc, fig.width = 8, fig.height = 4}
+```{r opening-win-perc, fig.width = 7, fig.height = 4}
 opening_games %>%
   group_by(team) %>%
   #removing teams that have not played at least ten seasons in the premier league
