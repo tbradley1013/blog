@@ -156,7 +156,7 @@ data_tidy %>%
   facet_wrap(~season, scales = "free") +
   geom_line() +
   theme_tq() +
-  scale_x_date(date_breaks = "1 month", date_labels = "%m/%d") +
+  scale_x_date(date_breaks = "2 month", date_labels = "%m/%d") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, 
                                    vjust = 0.5, size = 12),
         axis.text.y = element_text(size = 12),
@@ -176,7 +176,7 @@ data_tidy %>%
   facet_wrap(~season, scales = "free") +
   geom_line() +
   theme_tq() +
-  scale_x_date(date_breaks = "1 month", 
+  scale_x_date(date_breaks = "2 month", 
                date_labels = "%m/%d") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, 
                                    vjust = 0.5, size = 12),
@@ -378,7 +378,7 @@ home_adv_team
 ```
 
 
-```{r, fig.width = 7, fig.height = 4}
+```{r, fig.width = 7, fig.height = 7}
 home_adv_team %>%
   arrange(-winning_percentage) %>%
   mutate(team = factor(team, unique(team)),
@@ -392,7 +392,7 @@ home_adv_team %>%
         axis.text.y = element_text(size = 12),
         strip.text = element_text(size = 12),
         legend.position = "none") +
-  geom_text(aes(x = team, y = 85, label = paste("n =", as.character(num_games_total)))) +
+  geom_text(aes(x = team, y = winning_percentage + 5, label = paste0("n=", as.character(num_games_total)))) +
   labs(x = "",
        y = "Winning Percentage",
        title = "Winning Percentage for Teams on Opening Weekend both Home and Away",
@@ -425,7 +425,7 @@ opening_games %>%
         axis.text.y = element_text(size = 12),
         strip.text = element_text(size = 12),
         legend.position = "none") +
-  geom_text(aes(x = team, y = 72, label = paste("n =", as.character(num_games_total)))) +
+  geom_text(aes(x = team, y = winning_percentage + 5, label = paste0("n=", as.character(num_games_total)))) +
   labs(x = "",
        y = "Winning Percentage",
        title = "Winning Percentage for Teams on Opening Weekend",
