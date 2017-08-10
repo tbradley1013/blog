@@ -16,9 +16,9 @@ knitr::opts_chunk$set(cache = TRUE)
 ```
 
 #Introduction
-I was listening to [https://twitter.com/codinghorror](Jeff Atwood)'s interview on the podcast [http://developeronfire.com/](Developer on Fire) and he said something that struck home with me. It was along the lines of, "The best time to start blogging is yesterday." I have been considering starting a blog about [https://twitter.com/hashtag/rstats](#rstats) but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie's [https://github.com/rstudio/blogdown](blogdown), I was able to set up the basic webpage pretty easily too. 
+I was listening to [Jeff Atwood's](https://twitter.com/codinghorror) interview on the podcast [Developer on Fire](http://developeronfire.com/) and he said something that struck home with me. It was along the lines of, "The best time to start blogging is yesterday." I have been considering starting a blog about [#rstats](https://twitter.com/hashtag/rstats) but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie's [blogdown](https://github.com/rstudio/blogdown), I was able to set up the basic webpage pretty easily too. 
 
-So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on [https://twitter.com/tb_goonR](twitter) (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)
+So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on [twitter](twitter https://twitter.com/tb_goonR) (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)
 
 #General Data Analysis
 ```{r libraries}
@@ -35,7 +35,7 @@ suppressWarnings(suppressPackageStartupMessages({
 }))
 ```
 
-First, we will load in the data. All of the data used in this analysis is from [www.football-data.co.uk](www.football-data.co.uk), and can be found on [https://github.com/tbradley1013/epl](my github page) under the epl repository. 
+First, we will load in the data. All of the data used in this analysis is from [www.football-data.co.uk](www.football-data.co.uk), and can be found on [my github page](https://github.com/tbradley1013/epl) under the epl repository. 
 
 ```{r read-files}
 files <- list.files(path = "epl_results", full.names = TRUE)
