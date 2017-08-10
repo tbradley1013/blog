@@ -45,6 +45,7 @@ raw_data <- map(files, read.csv)
 
 
 Below is the column information provided by the website:
+
     * Div = League Division
     * Date = Match Date (dd/mm/yy)
     * HomeTeam = Home Team
@@ -56,7 +57,8 @@ Below is the column information provided by the website:
     * HTAG = Half Time Away Team Goals 
     * HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)
 
-Match Statistics (where available)
+Match Statistics (where available):
+
     * Attendance = Crowd Attendance
     * Referee = Match Referee
     * HS = Home Team Shots
