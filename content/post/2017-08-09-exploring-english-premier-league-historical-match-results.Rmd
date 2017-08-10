@@ -187,7 +187,7 @@ data_tidy %>%
 
 Now that we know that the data is in a tidy format, we can begin exploring the data. As an Arsenal fan, I think we should start by looking at how Arsenal has done each year. 
 
-```{r arsenal-points-graph-1, fig.width=12, fig.height=7}
+```{r arsenal-points-graph-1, fig.width = 8, fig.height = 4}
 data_tidy %>%
   filter(team == "Arsenal",
          season < 2007) %>%
@@ -207,7 +207,7 @@ data_tidy %>%
 
 ```
 
-```{r arsenal-points-graph-2, fig.width=12, fig.height=7}
+```{r arsenal-points-graph-2, fig.width = 8, fig.height = 4}
 data_tidy %>%
   filter(team == "Arsenal",
          season >= 2007) %>%
@@ -297,7 +297,7 @@ season_ending_stats
 
 As we can see from the tibble summary, there are several teams that have only been in the premier league for a single year, resulting in NaN values for the standard deviation columns. To avoid cluttering the next graph, we will remove any teams that have not been in the premier league for at least 10 of the 22 seasons being analyzed. 
 
-```{r bar-graph-season-stats, fig.width = 12, fig.height = 7}
+```{r bar-graph-season-stats, fig.width = 8, fig.height = 4}
 season_ending_stats %>%
   filter(num_seasons >= 10) %>%
   arrange(-avg_final_points) %>%
@@ -323,7 +323,7 @@ season_ending_stats %>%
 It looks like Manchester United have the highest average final points per season. They are followed closely by Arsenal and Chelsea, who are then closely followed by Liverpool, Manchester City, and Tottenham. It is worth noting that Chelsea and Manchester City both have much higher error associated with their mean value, indicating they have much more fluctuation in the final point tallies. Another interesting take away from this figure is that the lowest average final point tally for teams that have been in the premier league for at least 10 of the previous 22 seasons is 39 points. 39 points typically guarantees a season that is safe from relegation. However, for the teams with the lower average finally point tally, such as Sunderland and West Brom, see the lower tails of their error bars treading dangerously close to relegation zone. 
 
 Now, it will be interesting to see how these teams final point tallies will look on the new joyplots from the `ggjoy` package.
-```{r final-points-joyplot, fig.width = 12, fig.height = 10, message = FALSE}
+```{r final-points-joyplot, fig.width = 8, fig.height = 8, message = FALSE}
 season_ending %>%
   group_by(team) %>%
   mutate(num_seasons = n(),
@@ -430,7 +430,7 @@ home_adv
 
 It looks like the away team actually fairs slightly better on opening weekend than during the rest of the season. Let's now take a look at the winning percentage by year for the home teams and the away teams. 
 
-```{r home-adv-graph, fig.width = 12, fig.height = 7}
+```{r home-adv-graph, fig.width = 8, fig.height = 4}
 opening_games %>%
   group_by(season, venue) %>%
   summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
@@ -493,7 +493,7 @@ home_adv_team
 # # ... with 26 more rows
 ```
 
-```{r, fig.width = 12, fig.height = 7}
+```{r, fig.width = 8, fig.height = 4}
 home_adv_team %>%
   arrange(-winning_percentage) %>%
   mutate(team = factor(team, unique(team)),
@@ -519,7 +519,7 @@ This figure seems to provide much more insight into how home field advantage can
 
 Let's take a look at each team's overall winning percentage on opening weekend.
 
-```{r opening-win-perc, fig.width = 12, fig.height = 7}
+```{r opening-win-perc, fig.width = 8, fig.height = 4}
 opening_games %>%
   group_by(team) %>%
   #removing teams that have not played at least ten seasons in the premier league
