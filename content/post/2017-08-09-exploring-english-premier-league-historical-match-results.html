@@ -15,8 +15,8 @@ tags:
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>I was listening to Jeff Atwood’s interview on the podcast <a href="Developer%20on%20Fire">http://developeronfire.com/</a> and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about <a href="#rstats">https://twitter.com/hashtag/rstats</a> but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie’s <a href="blogdown">https://github.com/rstudio/blogdown</a>, I was able to set up the basic webpage pretty easily too.</p>
-<p>So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on <a href="twitter">https://twitter.com/tb_goonR</a> (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)</p>
+<p>I was listening to <a href = "https://twitter.com/codinghorror">Jeff Atwood’s</a> interview on the podcast <a href="http://developeronfire.com/">Developer on Fire</a> and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about <a href="https://twitter.com/hashtag/rstats">#rstats</a> but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any. With the help of Yihui Xie’s <a href="https://github.com/rstudio/blogdown">blogdown</a>, I was able to set up the basic webpage pretty easily too.</p>
+<p>So In honor of the start of a new season for the English Premier League (EPL), I put together this exploratory data analysis of historical EPL data to see how teams typically do to start a season. I would love any feed back and suggestions! Please feel free to follow me on <a href="https://twitter.com/tb_goonR">twitter</a> (I just created it this past week to better keep up with #rstats rather than just continually googling it as I have been for the last year.)</p>
 </div>
 <div id="general-data-analysis" class="section level1">
 <h1>General Data Analysis</h1>
@@ -31,7 +31,7 @@ suppressWarnings(suppressPackageStartupMessages({
   library(ggjoy)
   library(dplyr)
 }))</code></pre>
-<p>First, we will load in the data. All of the data used in this analysis is from <a href="www.football-data.co.uk" class="uri">www.football-data.co.uk</a>, and can be found on <a href="my%20github%20page">https://github.com/tbradley1013/epl</a> under the epl repository.</p>
+<p>First, we will load in the data. All of the data used in this analysis is from <a href="www.football-data.co.uk" class="uri">www.football-data.co.uk</a>, and can be found on <a href="https://github.com/tbradley1013/epl">my github page</a> under the epl repository.</p>
 <pre class="r"><code>files &lt;- list.files(path = &quot;epl_results&quot;, full.names = TRUE)
 
 raw_data &lt;- map(files, read.csv)</code></pre>
