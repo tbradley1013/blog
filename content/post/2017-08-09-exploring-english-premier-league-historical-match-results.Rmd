@@ -35,7 +35,7 @@ suppressWarnings(suppressPackageStartupMessages({
 }))
 ```
 
-First, we will load in the data. All of the data used in this analysis is from [www.football-data.co.uk](www.football-data.co.uk), and can be found on [my github page](https://github.com/tbradley1013/epl) under the epl repository. 
+First, we will load in the data. All of the data used in this analysis is from <www.football-data.co.uk>, and can be found on [my github page](https://github.com/tbradley1013/epl) under the epl repository. 
 
 ```{r read-files}
 files <- list.files(path = "epl_results", full.names = TRUE)
