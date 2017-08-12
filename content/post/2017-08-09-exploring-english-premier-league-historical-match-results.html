@@ -116,17 +116,19 @@ data &lt;- do.call(rbind, data_general) %&gt;% as.tibble()</code></pre>
          FTGA = ifelse(venue == &quot;Home&quot;, FTAG, FTHG),  #Full Time Goals Against
          HTGF = ifelse(venue == &quot;Home&quot;, HTHG, HTAG),  #Half Time Goals For
          HTGA = ifelse(venue == &quot;Home&quot;, HTAG, HTHG),  #Half Time Goals Against
+         goal_diff = FTGF - FTGA,                    #goal difference
          points_earned = case_when(FTR == &quot;W&quot; ~ 3,           #adding points
                                    FTR == &quot;D&quot; ~ 1,
                                    FTR == &quot;L&quot; ~ 0)) %&gt;% 
   select(Div, season, Date, team, venue, FTR, FTGF, 
-         FTGA, HTR, HTGF, HTGA, points_earned) %&gt;%
+         FTGA, HTR, HTGF, HTGA, goal_diff, points_earned) %&gt;%
   group_by(season, team) %&gt;%
-  mutate(points = cumsum(points_earned)) %&gt;% #calculating the number of points each team has through out the season
+  mutate(points = cumsum(points_earned),
+         goal_diff_tot = cumsum(goal_diff)) %&gt;% #calculating the number of points each team has through out the season
   ungroup()
 
 data_tidy</code></pre>
-<pre><code>## # A tibble: 16,720 x 13
+<pre><code>## # A tibble: 16,720 x 15
 ##      Div season       Date        team venue   FTR  FTGF  FTGA   HTR  HTGF
 ##    &lt;chr&gt;  &lt;dbl&gt;     &lt;date&gt;       &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;int&gt;
 ##  1    E0   1996 1995-08-19 Aston Villa  Home     W     3     1     W     3
@@ -139,8 +141,9 @@ data_tidy</code></pre>
 ##  8    E0   1996 1995-08-19    West Ham  Home     L     1     2     W     1
 ##  9    E0   1996 1995-08-19   Wimbledon  Home     W     3     2     D     2
 ## 10    E0   1996 1995-08-19  Man United  Away     L     1     3     L     0
-## # ... with 16,710 more rows, and 3 more variables: HTGA &lt;int&gt;,
-## #   points_earned &lt;dbl&gt;, points &lt;dbl&gt;</code></pre>
+## # ... with 16,710 more rows, and 5 more variables: HTGA &lt;int&gt;,
+## #   goal_diff &lt;int&gt;, points_earned &lt;dbl&gt;, points &lt;dbl&gt;,
+## #   goal_diff_tot &lt;int&gt;</code></pre>
 <p>To ensure that our tidying did not create any missing values, we can use the <code>summarise_all()</code> function.</p>
 <pre class="r"><code>data_tidy %&gt;% 
   summarise_all(function(x) sum(is.na(x)))</code></pre>
@@ -190,14 +193,15 @@ data_tidy</code></pre>
   group_by(season, team) %&gt;%
   summarise(final_points = max(points), 
             final_goals_for = sum(FTGF), 
-            final_goals_against = sum(FTGA)) %&gt;%
+            final_goals_against = sum(FTGA),
+            final_goal_diff = sum(goal_diff)) %&gt;%
   ungroup() %&gt;%
   group_by(season) %&gt;%
   mutate(table_position = 20 - rank(final_points, ties.method = &quot;min&quot;)) %&gt;%
   ungroup()
   
 season_ending</code></pre>
-<pre><code>## # A tibble: 440 x 6
+<pre><code>## # A tibble: 440 x 7
 ##    season        team final_points final_goals_for final_goals_against
 ##     &lt;dbl&gt;       &lt;chr&gt;        &lt;dbl&gt;           &lt;int&gt;               &lt;int&gt;
 ##  1   1996     Arsenal           63              49                  32
@@ -210,8 +214,9 @@ season_ending</code></pre>
 ##  8   1996       Leeds           43              40                  57
 ##  9   1996   Liverpool           71              70                  34
 ## 10   1996    Man City           38              33                  58
-## # ... with 430 more rows, and 1 more variables: table_position &lt;dbl&gt;</code></pre>
-<p>From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest number of goals for, and then by head to head match-ups. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won’t worry about fixing these ties.</p>
+## # ... with 430 more rows, and 2 more variables: final_goal_diff &lt;int&gt;,
+## #   table_position &lt;dbl&gt;</code></pre>
+<p>From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest goal difference, and then goals for. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that they both had a +17 overall goal difference but Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won’t worry about fixing these ties.</p>
 <pre class="r"><code>season_ending_stats &lt;- season_ending %&gt;%
   group_by(team) %&gt;%
   summarise(avg_final_points = round(mean(final_points), 0), 

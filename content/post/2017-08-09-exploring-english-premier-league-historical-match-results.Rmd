@@ -125,13 +125,15 @@ data_tidy <- data %>%
          FTGA = ifelse(venue == "Home", FTAG, FTHG),  #Full Time Goals Against
          HTGF = ifelse(venue == "Home", HTHG, HTAG),  #Half Time Goals For
          HTGA = ifelse(venue == "Home", HTAG, HTHG),  #Half Time Goals Against
+         goal_diff = FTGF - FTGA,                    #goal difference
          points_earned = case_when(FTR == "W" ~ 3,           #adding points
                                    FTR == "D" ~ 1,
                                    FTR == "L" ~ 0)) %>% 
   select(Div, season, Date, team, venue, FTR, FTGF, 
-         FTGA, HTR, HTGF, HTGA, points_earned) %>%
+         FTGA, HTR, HTGF, HTGA, goal_diff, points_earned) %>%
   group_by(season, team) %>%
-  mutate(points = cumsum(points_earned)) %>% #calculating the number of points each team has through out the season
+  mutate(points = cumsum(points_earned),
+         goal_diff_tot = cumsum(goal_diff)) %>% #calculating the number of points each team has through out the season
   ungroup()
 
 data_tidy
@@ -196,7 +198,8 @@ season_ending <- data_tidy %>%
   group_by(season, team) %>%
   summarise(final_points = max(points), 
             final_goals_for = sum(FTGF), 
-            final_goals_against = sum(FTGA)) %>%
+            final_goals_against = sum(FTGA),
+            final_goal_diff = sum(goal_diff)) %>%
   ungroup() %>%
   group_by(season) %>%
   mutate(table_position = 20 - rank(final_points, ties.method = "min")) %>%
@@ -206,7 +209,7 @@ season_ending
 ```
 
 
-From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest number of goals for, and then by head to head match-ups. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won't worry about fixing these ties. 
+From this output, right away we can see that point ties result in the rank function returning a tie. The EPL determines ties first by highest goal difference, and then goals for. Looking at this first example of the tie between Arsenal and Aston Villa, we can see that they both had a +17 overall goal difference but Aston Villa had 3 more goals for, meaning they finished 4th and Arsenal finished 5th. For now, we won't worry about fixing these ties. 
 
 ```{r season-ending-summary }
 season_ending_stats <- season_ending %>%
