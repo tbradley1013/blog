@@ -1,9 +1,10 @@
-baseurl = "/"
+baseurl = "https://tbradley1013.github.io"
 languageCode = "en-us"
 title = "goonR blog"
 theme = "hugo-lithium-theme"
 googleAnalytics = ""
 disqusShortname = ""
+publishDir = "../tbradley1013.github.io"
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 
 [permalinks]
