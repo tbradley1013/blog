@@ -12,7 +12,7 @@ tags:
 ---
 
 ```{r, results = "hide", echo = FALSE, message = FALSE, warning = FALSE}
-knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(cache = TRUE, out.width = "800px", out.height = "600px")
 ```
 
 #Introduction
@@ -166,7 +166,7 @@ data_tidy %>%
         axis.title = element_text(size = 12)) +
   labs(x = "", 
        y = "Point Tally",
-       title = "Arsenal Point Tally over the course of each season from the 1995/1996 season to the 2005/2006 season")
+       title = "Arsenal Point Tally over the course of each season from\nthe 1995/1996 season to the 2005/2006 season")
 
 ```
 
@@ -187,7 +187,7 @@ data_tidy %>%
         axis.title = element_text(size = 12))+
   labs(x = "", 
        y = "Point Tally",
-       title = "Arsenal Point Tally over the course of each season from the 2006/2007 season to the 2016/2017 season")
+       title = "Arsenal Point Tally over the course of each season from\nthe 2006/2007 season to the 2016/2017 season")
 
 ```
 
@@ -333,7 +333,7 @@ home_adv
 
 It looks like the away team actually fairs slightly better on opening weekend than during the rest of the season. Let's now take a look at the winning percentage by year for the home teams and the away teams. 
 
-```{r home-adv-graph, fig.width = 7, fig.height = 4}
+```{r home-adv-graph, fig.width = 7, fig.height = 5}
 opening_games %>%
   group_by(season, venue) %>%
   summarise(perc_W = round((sum(FTR == "W")/n()) * 100, 1), 
@@ -357,7 +357,7 @@ opening_games %>%
         legend.title = element_blank()) +
   labs(x = "Year",
        y = "Percentage of Results by Year",
-       title = "The Percent of Results (Win, Draw, Loss) per Season for Home Teams on Opening Weekend")
+       title = "The Percent of Results (Win, Draw, Loss) per Season\nfor Home Teams on Opening Weekend")
   
 
 ```
