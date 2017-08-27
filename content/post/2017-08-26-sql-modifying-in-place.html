@@ -44,7 +44,7 @@ data(&quot;diamonds&quot;)
 
 mtcars %&lt;&gt;% 
   rownames_to_column()</code></pre>
-<p>Now that we have these two data sets loaded into the session, lets write them into “ex-db”.</p>
+<p>Now that we have these two data sets loaded into the session, lets write them into the database.</p>
 <pre class="r"><code>dbWriteTable(con, &quot;cars&quot;, mtcars)
 dbWriteTable(con, &quot;diamonds&quot;, diamonds)
 
