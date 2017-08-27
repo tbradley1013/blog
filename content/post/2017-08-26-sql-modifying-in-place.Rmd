@@ -142,7 +142,7 @@ As we can see, the `dbplyr` method, while very familiar and potentially easier i
 #Modify Tables in Place
 While there are a lot of blog posts and some great package vignettes about setting up your tables and querying sql databases, there is not too much (that I have seen) about modifying tables in place in your database. There are a few options that are possible when you want to modify a table in a sql database. The first option is to simply query the entire database, make your desired changes using your prefered R tools and then overwrite the table in the database. However, this approach is not practical if you have a large amount of data in your table. 
 
-The method that I have found that seems to be fairly straight forward is using the `dbSendQuery` function. While knowing this function is important, the more important part of this function is knowing what SQL commmads to include in your query. The blog post on [Win-Vector Blog](http://www.win-vector.com/blog/2016/02/using-postgresql-in-r/) concerning using PostgreSqL in R shows how you can drop entire tables from your database, and the `RSQLite` vignette by Hadley Wickham shows how to delete rows that meet certain conditions. However, if you want to modify a table in your database, the sql commands needed are "update" "set", and "where". You can see below how we can use these two commands.
+The method that I have found that seems to be fairly straight forward is using the `dbSendQuery` function. While knowing this function is important, the more important part of this function is knowing what SQL commmads to include in your query. The blog post on [Win-Vector Blog](http://www.win-vector.com/blog/2016/02/using-postgresql-in-r/) concerning using PostgreSqL in R shows how you can drop entire tables from your database, and the `RSQLite` vignette by Hadley Wickham shows how to delete rows that meet certain conditions. However, if you want to modify a table in your database, the sql commands needed are "update" "set", and "where". You can see below how we can use these commands.
 
 ```{r}
 update_query <- paste("update cars",
@@ -177,7 +177,7 @@ We can see that this changed 3903 rows in the diamonds dataset.
 
 Before we finish, it is imprtant to remember to disconnect from the in-memory database using the `dbDisconnect` function.
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 dbDisconnect(con)
 ```
 
