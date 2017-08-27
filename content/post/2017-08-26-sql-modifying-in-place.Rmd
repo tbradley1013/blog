@@ -1,0 +1,186 @@
+---
+title: "Creating, Writing, Querying, and Modifying SQL Database from R using odbc, dbplyr, and DBI"
+author: "Tyler Bradley"
+date: '2017-08-26'
+slug: sql-management-in-R
+tags:
+- tidyverse
+- SQLite
+- rstats
+- dplyr
+- DBI
+- odbc
+categories:
+- R
+- SQL
+---
+
+```{r, results = "hide", echo = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(cache = FALSE, out.width = "850px", out.height = "700px")
+```
+
+#Introduction
+Recently, I have been building shiny apps for work. The app that I am currently working on is an interface to a database for storing information about sanitary release samples being taken from new water distribution pipelines. In addition to building the shiny app for my coworkers to interact with the database, I also was tasked with creating and building the database. I have never build a SQL database from scratch, but luckily the (https://github.com/rstats-db/odbc)[odbc] and the (https://github.com/rstats-db/DBI)[DBI] packages make it fairly straight foreward. 
+
+
+Let's start by loading in the packages that we will need.
+
+```{r, warnings = FALSE, message = FALSE}
+library(DBI)
+library(odbc)
+library(RSQLite)
+library(tidyverse)
+library(magrittr)
+library(dbplyr)
+```
+
+#Connecting to the Database
+The `dbConnect` function from the `DBI` package allows us to create a SQLite database directly from R. SQLite databases are saved as files in the current working directory with this method. As described in the `RSQLite` packge vignette, if you simply want to use a temporary database, you can create either an on-disk database or an in-memory database with this same method. For this example, we will create a new SQLite in-memory database
+
+```{r}
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+```
+
+Currently, our database is empty, as can be seen if we use the `dbListTables` function.
+
+```{r}
+dbListTables(con)
+```
+
+#Writing Tables to database
+To add data to this database we will use the `dbWriteTable` function. First, let's load in two common datasets, `mtcars` and `diamonds`.
+
+```{r, warning = FALSE}
+data("mtcars")
+data("diamonds")
+
+mtcars %<>% 
+  rownames_to_column()
+```
+
+Now that we have these two data sets loaded into the session, lets write them into "ex-db".
+
+```{r}
+dbWriteTable(con, "cars", mtcars)
+dbWriteTable(con, "diamonds", diamonds)
+
+dbListTables(con)
+```
+
+#Query the Database
+There are several ways that we can query the tables in this database. We can read in the entire table using the `dbReadTable` function.
+
+```{r}
+dbReadTable(con, "cars") %>%
+  head(10)
+```
+
+Alternatively, we can write out a full sql query using the `dbGetQuery` function.
+
+```{r}
+dbGetQuery(con, "select * from cars") %>%
+  head(10) 
+```
+
+We can use the `microbenchmark` package to determine which of these methods is faster. We will measure the time for the diamonds data set as that has nearly 54,000 observations, as opposed to the 32 in the mtcars dataset.
+
+```{r, cache = TRUE}
+microbenchmark::microbenchmark(
+  read_table = dbReadTable(con, "diamonds"),
+  query = dbGetQuery(con, "select * from diamonds")
+)
+
+```
+
+
+It looks like the `dbReadTable` method is slightly faster than a full query. However, the real benefit to using `dbGetQuery` is the ability to write much more complex sql queries. For example, if we want to subset the data, we are able to.
+
+```{r}
+query <- paste("select carat, cut, clarity, color, price from diamonds",
+               "where carat > 1 and cut = 'Ideal'")
+dbGetQuery(con, query) %>%
+  as.tibble()
+```
+
+
+This particular query returned just over 10% of the total data with 5,662 rows matching the conditions set. This feature is extremely important when dealing with database that house extremely large amounts of data. Having to query full tables would be extemely unfeasible in most situations. 
+
+In addition to writing more complex sql queries, the `dbplyr` package allows for R users to avoid having to write queries at all. This package allows users to create a reference to the sql table and interact with it using typical `dplyr` verbs. We can recreate the query above using this method. First we will use the `tbl` function to create the reference to the diamonds table in the database. Then we will be able to use that reference with all of our favorite `dplyr` verbs. 
+
+```{r}
+diamonds_tbl <- tbl(con, "diamonds")
+
+diamonds_tbl %>%
+  select(carat, cut, clarity, color, price) %>%
+  filter(carat > 1, 
+         cut == "Ideal") %>% 
+  collect() %>%
+  as.tibble()
+```
+
+
+The `collect` verb is important if you want the full query to be brought into your R session. The `dbplyr` package uses lazy evaluation and only brings in a portion of the query into your session. 
+
+
+Let's take a look at how these two methods compare using the `microbenchmark` package.
+
+```{r, cache = TRUE}
+microbenchmark::microbenchmark(
+  db_query = dbGetQuery(con, query),
+  dbplyr = diamonds_tbl %>%
+             select(carat, cut, clarity, color, price) %>%
+             filter(carat > 1, 
+                    cut == "Ideal") %>% 
+             collect()
+)
+
+```
+
+As we can see, the `dbplyr` method, while very familiar and potentially easier if you have no experience writing sql queries, takes nearly 6x as long as the straight sql query. 
+
+
+#Modify Tables in Place
+While there are a lot of blog posts and some great package vignettes about setting up your tables and querying sql databases, there is not too much (that I have seen) about modifying tables in place in your database. There are a few options that are possible when you want to modify a table in a sql database. The first option is to simply query the entire database, make your desired changes using your prefered R tools and then overwrite the table in the database. However, this approach is not practical if you have a large amount of data in your table. 
+
+The method that I have found that seems to be fairly straight forward is using the `dbSendQuery` function. While knowing this function is important, the more important part of this function is knowing what SQL commmads to include in your query. The blog post on (http://www.win-vector.com/blog/2016/02/using-postgresql-in-r/)[Win-Vector Blog] concerning using PostgreSqL in R shows how you can drop entire tables from your database, and the `RSQLite` vignette by Hadley Wickham shows how to delete rows that meet certain conditions. However, if you want to modify a table in your database, the sql commands needed are "update" "set", and "where". You can see below how we can use these two commands.
+
+```{r}
+update_query <- paste("update cars",
+                      "set mpg = 20",
+                      "where cyl = 6")
+
+dbSendQuery(con, update_query)
+```
+
+
+We can see that 7 rows were changed in the database. Let's now query the database and see how the table now looks.
+
+```{r, warning = FALSE, message = TRUE}
+dbGetQuery(con, "select * from cars") %>%
+  as.tibble()
+```
+
+It looks like all of the rows where cyl = 6 have had their mpg changed to 20. While this is a somewhat trivial example, as you would most likely not want to change the results for a data set like this, this can be an incredibly useful feature if you are maintaining a database from R. 
+
+You can modify more rows by adding additional arguments to the "set" command and add more conditions by setting additional arguments to the "where" command. For example, we can edit the diamonds table below.
+
+```{r}
+update_query <- paste("update diamonds",
+                      "set cut = 'new Ideal',",
+                      "color = 'Z'",
+                      "where cut = 'Ideal' and",
+                      "color = 'E'")
+dbSendQuery(con, update_query)
+```
+
+We can see that this changed 3903 rows in the diamonds dataset.
+
+Before we finish, it is imprtant to remember to disconnect from the in-memory database using the `dbDisconnect` function.
+
+```{r}
+dbDisconnect(con)
+```
+
+#Conclusion
+The `DBI`, `odbc`, and `dbplyr` packages offer an incredible number of tools for interacting with SQL databases of all different kinds. While you are certainly able to navigate through most SQL query problems with only the functions provided in these packages, you can cartainly increase your capabilites by learning some basic SQL commands and how to use them in conjunction with the R functions provided in these packages. 
+

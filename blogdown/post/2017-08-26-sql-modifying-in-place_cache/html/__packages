@@ -1,0 +1,13 @@
+base
+DBI
+odbc
+RSQLite
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+dplyr
+magrittr
+dbplyr

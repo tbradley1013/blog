@@ -1,0 +1,203 @@
+---
+title: "Creating, Writing, Querying, and Modifying SQL Database from R using odbc, dbplyr, and DBI"
+author: "Tyler Bradley"
+date: '2017-08-26'
+slug: sql-management-in-R
+tags:
+- tidyverse
+- SQLite
+- rstats
+- dplyr
+- DBI
+- odbc
+categories:
+- R
+- SQL
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Recently, I have been building shiny apps for work. The app that I am currently working on is an interface to a database for storing information about sanitary release samples being taken from new water distribution pipelines. In addition to building the shiny app for my coworkers to interact with the database, I also was tasked with creating and building the database. I have never build a SQL database from scratch, but luckily the (<a href="https://github.com/rstats-db/odbc" class="uri">https://github.com/rstats-db/odbc</a>)[odbc] and the (<a href="https://github.com/rstats-db/DBI" class="uri">https://github.com/rstats-db/DBI</a>)[DBI] packages make it fairly straight foreward.</p>
+<p>Let’s start by loading in the packages that we will need.</p>
+<pre class="r"><code>library(DBI)
+library(odbc)
+library(RSQLite)
+library(tidyverse)
+library(magrittr)
+library(dbplyr)</code></pre>
+</div>
+<div id="connecting-to-the-database" class="section level1">
+<h1>Connecting to the Database</h1>
+<p>The <code>dbConnect</code> function from the <code>DBI</code> package allows us to create a SQLite database directly from R. SQLite databases are saved as files in the current working directory with this method. As described in the <code>RSQLite</code> packge vignette, if you simply want to use a temporary database, you can create either an on-disk database or an in-memory database with this same method. For this example, we will create a new SQLite in-memory database</p>
+<pre class="r"><code>con &lt;- dbConnect(RSQLite::SQLite(), &quot;:memory:&quot;)</code></pre>
+<p>Currently, our database is empty, as can be seen if we use the <code>dbListTables</code> function.</p>
+<pre class="r"><code>dbListTables(con)</code></pre>
+<pre><code>## character(0)</code></pre>
+</div>
+<div id="writing-tables-to-database" class="section level1">
+<h1>Writing Tables to database</h1>
+<p>To add data to this database we will use the <code>dbWriteTable</code> function. First, let’s load in two common datasets, <code>mtcars</code> and <code>diamonds</code>.</p>
+<pre class="r"><code>data(&quot;mtcars&quot;)
+data(&quot;diamonds&quot;)
+
+mtcars %&lt;&gt;% 
+  rownames_to_column()</code></pre>
+<p>Now that we have these two data sets loaded into the session, lets write them into “ex-db”.</p>
+<pre class="r"><code>dbWriteTable(con, &quot;cars&quot;, mtcars)
+dbWriteTable(con, &quot;diamonds&quot;, diamonds)
+
+dbListTables(con)</code></pre>
+<pre><code>## [1] &quot;cars&quot;     &quot;diamonds&quot;</code></pre>
+</div>
+<div id="query-the-database" class="section level1">
+<h1>Query the Database</h1>
+<p>There are several ways that we can query the tables in this database. We can read in the entire table using the <code>dbReadTable</code> function.</p>
+<pre class="r"><code>dbReadTable(con, &quot;cars&quot;) %&gt;%
+  head(10)</code></pre>
+<pre><code>##              rowname  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+## 1          Mazda RX4 21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
+## 2      Mazda RX4 Wag 21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
+## 3         Datsun 710 22.8   4 108.0  93 3.85 2.320 18.61  1  1    4    1
+## 4     Hornet 4 Drive 21.4   6 258.0 110 3.08 3.215 19.44  1  0    3    1
+## 5  Hornet Sportabout 18.7   8 360.0 175 3.15 3.440 17.02  0  0    3    2
+## 6            Valiant 18.1   6 225.0 105 2.76 3.460 20.22  1  0    3    1
+## 7         Duster 360 14.3   8 360.0 245 3.21 3.570 15.84  0  0    3    4
+## 8          Merc 240D 24.4   4 146.7  62 3.69 3.190 20.00  1  0    4    2
+## 9           Merc 230 22.8   4 140.8  95 3.92 3.150 22.90  1  0    4    2
+## 10          Merc 280 19.2   6 167.6 123 3.92 3.440 18.30  1  0    4    4</code></pre>
+<p>Alternatively, we can write out a full sql query using the <code>dbGetQuery</code> function.</p>
+<pre class="r"><code>dbGetQuery(con, &quot;select * from cars&quot;) %&gt;%
+  head(10) </code></pre>
+<pre><code>##              rowname  mpg cyl  disp  hp drat    wt  qsec vs am gear carb
+## 1          Mazda RX4 21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
+## 2      Mazda RX4 Wag 21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
+## 3         Datsun 710 22.8   4 108.0  93 3.85 2.320 18.61  1  1    4    1
+## 4     Hornet 4 Drive 21.4   6 258.0 110 3.08 3.215 19.44  1  0    3    1
+## 5  Hornet Sportabout 18.7   8 360.0 175 3.15 3.440 17.02  0  0    3    2
+## 6            Valiant 18.1   6 225.0 105 2.76 3.460 20.22  1  0    3    1
+## 7         Duster 360 14.3   8 360.0 245 3.21 3.570 15.84  0  0    3    4
+## 8          Merc 240D 24.4   4 146.7  62 3.69 3.190 20.00  1  0    4    2
+## 9           Merc 230 22.8   4 140.8  95 3.92 3.150 22.90  1  0    4    2
+## 10          Merc 280 19.2   6 167.6 123 3.92 3.440 18.30  1  0    4    4</code></pre>
+<p>We can use the <code>microbenchmark</code> package to determine which of these methods is faster. We will measure the time for the diamonds data set as that has nearly 54,000 observations, as opposed to the 32 in the mtcars dataset.</p>
+<pre class="r"><code>microbenchmark::microbenchmark(
+  read_table = dbReadTable(con, &quot;diamonds&quot;),
+  query = dbGetQuery(con, &quot;select * from diamonds&quot;)
+)</code></pre>
+<pre><code>## Unit: milliseconds
+##        expr      min       lq     mean   median       uq      max neval
+##  read_table 91.36283 94.55963 115.4623 98.51866 150.1218 175.2671   100
+##       query 90.61233 93.50576 111.0308 98.11973 113.0769 181.2567   100</code></pre>
+<p>It looks like the <code>dbReadTable</code> method is slightly faster than a full query. However, the real benefit to using <code>dbGetQuery</code> is the ability to write much more complex sql queries. For example, if we want to subset the data, we are able to.</p>
+<pre class="r"><code>query &lt;- paste(&quot;select carat, cut, clarity, color, price from diamonds&quot;,
+               &quot;where carat &gt; 1 and cut = &#39;Ideal&#39;&quot;)
+dbGetQuery(con, query) %&gt;%
+  as.tibble()</code></pre>
+<pre><code>## # A tibble: 5,662 x 5
+##    carat   cut clarity color price
+##    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt; &lt;int&gt;
+##  1  1.01 Ideal      I1     I  2844
+##  2  1.02 Ideal     SI2     H  2856
+##  3  1.02 Ideal      I1     I  2872
+##  4  1.02 Ideal     SI2     J  2879
+##  5  1.01 Ideal      I1     I  2896
+##  6  1.02 Ideal      I1     I  2925
+##  7  1.14 Ideal     SI1     J  3045
+##  8  1.02 Ideal     SI2     H  3142
+##  9  1.06 Ideal     SI2     I  3146
+## 10  1.02 Ideal     VS2     I  3148
+## # ... with 5,652 more rows</code></pre>
+<p>This particular query returned just over 10% of the total data with 5,662 rows matching the conditions set. This feature is extremely important when dealing with database that house extremely large amounts of data. Having to query full tables would be extemely unfeasible in most situations.</p>
+<p>In addition to writing more complex sql queries, the <code>dbplyr</code> package allows for R users to avoid having to write queries at all. This package allows users to create a reference to the sql table and interact with it using typical <code>dplyr</code> verbs. We can recreate the query above using this method. First we will use the <code>tbl</code> function to create the reference to the diamonds table in the database. Then we will be able to use that reference with all of our favorite <code>dplyr</code> verbs.</p>
+<pre class="r"><code>diamonds_tbl &lt;- tbl(con, &quot;diamonds&quot;)
+
+diamonds_tbl %&gt;%
+  select(carat, cut, clarity, color, price) %&gt;%
+  filter(carat &gt; 1, 
+         cut == &quot;Ideal&quot;) %&gt;% 
+  collect() %&gt;%
+  as.tibble()</code></pre>
+<pre><code>## # A tibble: 5,662 x 5
+##    carat   cut clarity color price
+##    &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt; &lt;int&gt;
+##  1  1.01 Ideal      I1     I  2844
+##  2  1.02 Ideal     SI2     H  2856
+##  3  1.02 Ideal      I1     I  2872
+##  4  1.02 Ideal     SI2     J  2879
+##  5  1.01 Ideal      I1     I  2896
+##  6  1.02 Ideal      I1     I  2925
+##  7  1.14 Ideal     SI1     J  3045
+##  8  1.02 Ideal     SI2     H  3142
+##  9  1.06 Ideal     SI2     I  3146
+## 10  1.02 Ideal     VS2     I  3148
+## # ... with 5,652 more rows</code></pre>
+<p>The <code>collect</code> verb is important if you want the full query to be brought into your R session. The <code>dbplyr</code> package uses lazy evaluation and only brings in a portion of the query into your session.</p>
+<p>Let’s take a look at how these two methods compare using the <code>microbenchmark</code> package.</p>
+<pre class="r"><code>microbenchmark::microbenchmark(
+  db_query = dbGetQuery(con, query),
+  dbplyr = diamonds_tbl %&gt;%
+             select(carat, cut, clarity, color, price) %&gt;%
+             filter(carat &gt; 1, 
+                    cut == &quot;Ideal&quot;) %&gt;% 
+             collect()
+)</code></pre>
+<pre><code>## Unit: milliseconds
+##      expr      min       lq     mean   median       uq      max neval
+##  db_query 10.10302 10.30996 10.63014 10.44201 10.60457 15.27123   100
+##    dbplyr 51.23319 52.08525 54.66543 53.53378 54.32673 87.69649   100</code></pre>
+<p>As we can see, the <code>dbplyr</code> method, while very familiar and potentially easier if you have no experience writing sql queries, takes nearly 6x as long as the straight sql query.</p>
+</div>
+<div id="modify-tables-in-place" class="section level1">
+<h1>Modify Tables in Place</h1>
+<p>While there are a lot of blog posts and some great package vignettes about setting up your tables and querying sql databases, there is not too much (that I have seen) about modifying tables in place in your database. There are a few options that are possible when you want to modify a table in a sql database. The first option is to simply query the entire database, make your desired changes using your prefered R tools and then overwrite the table in the database. However, this approach is not practical if you have a large amount of data in your table.</p>
+<p>The method that I have found that seems to be fairly straight forward is using the <code>dbSendQuery</code> function. While knowing this function is important, the more important part of this function is knowing what SQL commmads to include in your query. The blog post on (<a href="http://www.win-vector.com/blog/2016/02/using-postgresql-in-r/" class="uri">http://www.win-vector.com/blog/2016/02/using-postgresql-in-r/</a>)[Win-Vector Blog] concerning using PostgreSqL in R shows how you can drop entire tables from your database, and the <code>RSQLite</code> vignette by Hadley Wickham shows how to delete rows that meet certain conditions. However, if you want to modify a table in your database, the sql commands needed are “update” “set”, and “where”. You can see below how we can use these two commands.</p>
+<pre class="r"><code>update_query &lt;- paste(&quot;update cars&quot;,
+                      &quot;set mpg = 20&quot;,
+                      &quot;where cyl = 6&quot;)
+
+dbSendQuery(con, update_query)</code></pre>
+<pre><code>## &lt;SQLiteResult&gt;
+##   SQL  update cars set mpg = 20 where cyl = 6
+##   ROWS Fetched: 0 [complete]
+##        Changed: 7</code></pre>
+<p>We can see that 7 rows were changed in the database. Let’s now query the database and see how the table now looks.</p>
+<pre class="r"><code>dbGetQuery(con, &quot;select * from cars&quot;) %&gt;%
+  as.tibble()</code></pre>
+<pre><code>## # A tibble: 32 x 12
+##              rowname   mpg   cyl  disp    hp  drat    wt  qsec    vs    am
+##                &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1         Mazda RX4  20.0     6 160.0   110  3.90 2.620 16.46     0     1
+##  2     Mazda RX4 Wag  20.0     6 160.0   110  3.90 2.875 17.02     0     1
+##  3        Datsun 710  22.8     4 108.0    93  3.85 2.320 18.61     1     1
+##  4    Hornet 4 Drive  20.0     6 258.0   110  3.08 3.215 19.44     1     0
+##  5 Hornet Sportabout  18.7     8 360.0   175  3.15 3.440 17.02     0     0
+##  6           Valiant  20.0     6 225.0   105  2.76 3.460 20.22     1     0
+##  7        Duster 360  14.3     8 360.0   245  3.21 3.570 15.84     0     0
+##  8         Merc 240D  24.4     4 146.7    62  3.69 3.190 20.00     1     0
+##  9          Merc 230  22.8     4 140.8    95  3.92 3.150 22.90     1     0
+## 10          Merc 280  20.0     6 167.6   123  3.92 3.440 18.30     1     0
+## # ... with 22 more rows, and 2 more variables: gear &lt;dbl&gt;, carb &lt;dbl&gt;</code></pre>
+<p>It looks like all of the rows where cyl = 6 have had their mpg changed to 20. While this is a somewhat trivial example, as you would most likely not want to change the results for a data set like this, this can be an incredibly useful feature if you are maintaining a database from R.</p>
+<p>You can modify more rows by adding additional arguments to the “set” command and add more conditions by setting additional arguments to the “where” command. For example, we can edit the diamonds table below.</p>
+<pre class="r"><code>update_query &lt;- paste(&quot;update diamonds&quot;,
+                      &quot;set cut = &#39;new Ideal&#39;,&quot;,
+                      &quot;color = &#39;Z&#39;&quot;,
+                      &quot;where cut = &#39;Ideal&#39; and&quot;,
+                      &quot;color = &#39;E&#39;&quot;)
+dbSendQuery(con, update_query)</code></pre>
+<pre><code>## &lt;SQLiteResult&gt;
+##   SQL  update diamonds set cut = &#39;new Ideal&#39;, color = &#39;Z&#39; where cut = &#39;Ideal&#39; and color = &#39;E&#39;
+##   ROWS Fetched: 0 [complete]
+##        Changed: 3903</code></pre>
+<p>We can see that this changed 3903 rows in the diamonds dataset.</p>
+<p>Before we finish, it is imprtant to remember to disconnect from the in-memory database using the <code>dbDisconnect</code> function.</p>
+<pre class="r"><code>dbDisconnect(con)</code></pre>
+<pre><code>## Warning in rsqlite_disconnect(conn@ptr): There are 1 result in use. The
+## connection will be released when they are closed</code></pre>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>The <code>DBI</code>, <code>odbc</code>, and <code>dbplyr</code> packages offer an incredible number of tools for interacting with SQL databases of all different kinds. While you are certainly able to navigate through most SQL query problems with only the functions provided in these packages, you can cartainly increase your capabilites by learning some basic SQL commands and how to use them in conjunction with the R functions provided in these packages.</p>
+</div>
