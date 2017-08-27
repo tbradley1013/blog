@@ -37,8 +37,8 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     MathJaxVersion = "2.7.1"
 
     [params.logo]
-    url = "logo.png"
-    width = 50
+    url = "arsenal-buttton.jpg"
+    width = 30
     height = 50
     alt = "Logo"
 
