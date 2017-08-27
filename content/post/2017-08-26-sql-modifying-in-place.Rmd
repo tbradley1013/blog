@@ -20,7 +20,7 @@ knitr::opts_chunk$set(cache = FALSE, out.width = "850px", out.height = "700px")
 ```
 
 #Introduction
-Recently, I have been building shiny apps for work. The app that I am currently working on is an interface to a database for storing information about sanitary release samples being taken from new water distribution pipelines. In addition to building the shiny app for my coworkers to interact with the database, I also was tasked with creating and building the database. I have never build a SQL database from scratch, but luckily the (https://github.com/rstats-db/odbc)[odbc] and the (https://github.com/rstats-db/DBI)[DBI] packages make it fairly straight foreward. 
+Recently, I have been building shiny apps for work. The app that I am currently working on is an interface to a database for storing information about sanitary release samples being taken from new water distribution pipelines. In addition to building the shiny app for my coworkers to interact with the database, I also was tasked with creating and building the database. I have never build a SQL database from scratch, but luckily the [odbc](https://github.com/rstats-db/odbc) and the [DBI](https://github.com/rstats-db/DBI) packages make it fairly straight foreward. 
 
 
 Let's start by loading in the packages that we will need.
