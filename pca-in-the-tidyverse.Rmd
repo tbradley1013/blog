@@ -1,0 +1,14 @@
+---
+title: "PCA in a tidy(verse) framework"
+author: "Tyler Bradley"
+date: "2/1/2018"
+output: html_document
+---
+
+#Introduction
+The other day, a [question](https://community.rstudio.com/t/tidyverse-solutions-for-factor-analysis-principal-component-analysis/4504) was posted on [RStudio Community](https://community.rstudio.com/) about performing Principle Component Analysis (PCA) in a [tidyverse](https://www.tidyverse.org/) workflow. Conveniently, I had literally just worked through this process the day before and was able to post an [answer](https://community.rstudio.com/t/tidyverse-solutions-for-factor-analysis-principal-component-analysis/4504/2). While most questions and answers are good as they are on forum sites, I thought this one might be worth exploring a little more since using the tidyverse framework makes PCA much easier (IMO).
+
+In my answer, I used the `iris` dataset to demonstrate how PCA can be done in the tidyverse workflow. For this post, I will be using the `USArrests` dataset that was used in [An Introduction to Statistical Thinking](http://www-bcf.usc.edu/~gareth/ISL/index.html) by Gareth James et. al. In this book, they work through a PCA and focus on the statistics and explanations behind PCA. This is how I learned how to do PCA and would highly recommend it if you are unfamiliar with the topic. In this blog post, my focus will be more on implementing the PCA in the tidyverse framework. 
+
+#Exploring the data
+Before we dive in to 
