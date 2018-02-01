@@ -67,6 +67,8 @@ Let's take a look at murder arrest rates in each of the stats.
 
 ```{r murder-bar-plot}
 us_arrests %>% 
+  mutate(state = factor(state), 
+         state = fct_reorder(state, murder) %>% fct_rev()) %>% 
   ggplot(aes(state, murder)) + 
   geom_bar(stat = "identity") +
   theme_bw() +
@@ -77,7 +79,7 @@ us_arrests %>%
 
 ```
 
-You can see that Georgia has the highest murder rate, followed by Mississippi, Florida, and Louisiana. Let's try one more.
+You can see that Georgia has the highest murder rate, followed by Mississippi, Louisiana, and Florida Let's try one more.
 
 ```{r tidy-us-arrests-plot, fig.height = 10}
 us_arrests %>% 

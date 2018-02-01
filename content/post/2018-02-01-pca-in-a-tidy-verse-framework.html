@@ -116,6 +116,8 @@ us_arrests</code></pre>
 ## # ... with 40 more rows</code></pre>
 <p>Let’s take a look at murder arrest rates in each of the stats.</p>
 <pre class="r"><code>us_arrests %&gt;% 
+  mutate(state = factor(state), 
+         state = fct_reorder(state, murder) %&gt;% fct_rev()) %&gt;% 
   ggplot(aes(state, murder)) + 
   geom_bar(stat = &quot;identity&quot;) +
   theme_bw() +
@@ -124,7 +126,7 @@ us_arrests</code></pre>
        x = &quot;State&quot;,
        title = &quot;Murder rate in each state of the USA&quot;)</code></pre>
 <p><img src="/post/2018-02-01-pca-in-a-tidy-verse-framework_files/figure-html/murder-bar-plot-1.png" width="768" style="display: block; margin: auto;" /></p>
-<p>You can see that Georgia has the highest murder rate, followed by Mississippi, Florida, and Louisiana. Let’s try one more.</p>
+<p>You can see that Georgia has the highest murder rate, followed by Mississippi, Louisiana, and Florida Let’s try one more.</p>
 <pre class="r"><code>us_arrests %&gt;% 
   gather(key = crime, value = rate, c(murder, assault, rape)) %&gt;% 
   ggplot(aes(urbanpop, rate, color = crime)) + 
