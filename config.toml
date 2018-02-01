@@ -20,7 +20,7 @@ plugins = "jekyll-seo-tag"
     url = "https://github.com/tbradley1013"
 [[menu.main]]
     name = "Twitter"
-    url = "https://twitter.com/tb_goonR"
+    url = "https://twitter.com/tycbrad"
 [[menu.main]]
     name = "LinkedIn"
     url = "https://www.linkedin.com/in/tyler-bradley-68707292/"
