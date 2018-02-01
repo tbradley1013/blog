@@ -11,6 +11,7 @@ tags:
   - dplyr
   - rstats
   - purrr
+description: "Principal Component Analysis in the tidyverse"
 ---
 
 #Introduction
