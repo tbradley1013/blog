@@ -17,8 +17,8 @@ tags:
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>The other day, a <a href="https://community.rstudio.com/t/tidyverse-solutions-for-factor-analysis-principal-component-analysis/4504">question</a> was posted on <a href="https://community.rstudio.com/">RStudio Community</a> about performing Principle Component Analysis (PCA) in a <a href="https://www.tidyverse.org/">tidyverse</a> workflow. Conveniently, I had literally just worked through this process the day before and was able to post an <a href="https://community.rstudio.com/t/tidyverse-solutions-for-factor-analysis-principal-component-analysis/4504/2">answer</a>. While most questions and answers are good as they are on forum sites, I thought this one might be worth exploring a little more since using the tidyverse framework makes PCA much easier, in my opinion.</p>
-<p>PCA is a multi-variate statistical technique for dimension reduction. Essentially, it allows you to take a data set that has n continuous variables and relate them through n orthogonal dimensions. This is a method of unsupervised learning that allows you to better understand the variability in the data set and how different variables are related. While there are the same number of principle components created as there are variables (assuming you have more observations than variables-but that is another issue), each principle component explains the maximum possible variation in the data conditional on it being orthogonal, or perpendicular, to the previous principle components.</p>
+<p>The other day, a <a href="https://community.rstudio.com/t/tidyverse-solutions-for-factor-analysis-principal-component-analysis/4504">question</a> was posted on <a href="https://community.rstudio.com/">RStudio Community</a> about performing Principal Component Analysis (PCA) in a <a href="https://www.tidyverse.org/">tidyverse</a> workflow. Conveniently, I had literally just worked through this process the day before and was able to post an <a href="https://community.rstudio.com/t/tidyverse-solutions-for-factor-analysis-principal-component-analysis/4504/2">answer</a>. While most questions and answers are good as they are on forum sites, I thought this one might be worth exploring a little more since using the tidyverse framework makes PCA much easier, in my opinion.</p>
+<p>PCA is a multi-variate statistical technique for dimension reduction. Essentially, it allows you to take a data set that has n continuous variables and relate them through n orthogonal dimensions. This is a method of unsupervised learning that allows you to better understand the variability in the data set and how different variables are related. While there are the same number of principal components created as there are variables (assuming you have more observations than variables-but that is another issue), each principal component explains the maximum possible variation in the data conditional on it being orthogonal, or perpendicular, to the previous principal components.</p>
 <p>In my answer, I used the <code>iris</code> data set to demonstrate how PCA can be done in the tidyverse workflow. For this post, I will be using the <code>USArrests</code> data set that was used in <a href="http://www-bcf.usc.edu/~gareth/ISL/index.html">An Introduction to Statistical Thinking</a> by Gareth James et. al. In this book, they work through a PCA and focus on the statistics and explanations behind PCA. This is how I learned how to do PCA and would highly recommend it if you are unfamiliar with the topic. In this blog post, my focus will be more on implementing the PCA in the tidyverse framework.</p>
 </div>
 <div id="exploring-the-data" class="section level1">
@@ -154,7 +154,7 @@ us_arrests_pca</code></pre>
 ##   data              pca          pca_aug               
 ##   &lt;list&gt;            &lt;list&gt;       &lt;list&gt;                
 ## 1 &lt;tibble [50 x 5]&gt; &lt;S3: prcomp&gt; &lt;data.frame [50 x 10]&gt;</code></pre>
-<p>As you can see, we now have a tibble with one row and three columns. The first is our original data set, the second is the <code>prcomp</code> object and the third is a data frame containing the principle component values for each observation. Now we have everything we need to evaluate the results of the model. First, it is important to look at how much variance is explained by each principle component. This will tell you how many of the components you need to look at when analyzing the results. To do this, you can use the data in the <code>pca_aug</code> column of our <code>us_arrests_pca</code> tibble along with some <code>dplyr</code> functions.</p>
+<p>As you can see, we now have a tibble with one row and three columns. The first is our original data set, the second is the <code>prcomp</code> object and the third is a data frame containing the principal component values for each observation. Now we have everything we need to evaluate the results of the model. First, it is important to look at how much variance is explained by each principal component. This will tell you how many of the components you need to look at when analyzing the results. To do this, you can use the data in the <code>pca_aug</code> column of our <code>us_arrests_pca</code> tibble along with some <code>dplyr</code> functions.</p>
 <pre class="r"><code>var_exp &lt;- us_arrests_pca %&gt;% 
   unnest(pca_aug) %&gt;% 
   summarize_at(.vars = vars(contains(&quot;PC&quot;)), .funs = funs(var)) %&gt;% 
@@ -171,7 +171,7 @@ var_exp</code></pre>
 ## 2 PC2      0.990  0.247        0.868
 ## 3 PC3      0.357  0.0891       0.957
 ## 4 PC4      0.173  0.0434       1.00</code></pre>
-<p>We can see that the first principle component explains 62% of the variation and that the second principle component explains 25% of the remaining variation. Together, we can see that they explain 87% of the variance in the data set. As a general rule of thumb, you want to look at enough principle components to explain ~90% of your data’s variability.</p>
+<p>We can see that the first principal component explains 62% of the variation and that the second principal component explains 25% of the remaining variation. Together, we can see that they explain 87% of the variance in the data set. As a general rule of thumb, you want to look at enough principal components to explain ~90% of your data’s variability.</p>
 <p>Another way of assessing this is to plot the variance explained and the cumulative variance explained and look for the “elbow” in the graph. You can do that like this:</p>
 <pre class="r"><code>var_exp %&gt;% 
   rename(
@@ -186,9 +186,9 @@ var_exp</code></pre>
   theme_bw() +
   lims(y = c(0, 1)) +
   labs(y = &quot;Variance&quot;,
-       title = &quot;Variance explained by each principle component&quot;)</code></pre>
+       title = &quot;Variance explained by each principal component&quot;)</code></pre>
 <p><img src="/post/2018-02-01-pca-in-a-tidy-verse-framework_files/figure-html/var-exp-graph-1.png" width="768" style="display: block; margin: auto;" /></p>
-<p>Since the majority of the variance is explained by the first two principle components, let’s plot them against each other. Luckily, this is made easy by the <code>ggplot2</code> and <code>ggfortify</code> packages which gives an <code>autoplot</code> method for prcomp objects. Conveniently, we still have our <code>prcomp</code> object stored in the our <code>us_arrests_pca</code> tibble along with our original data. This is important as the original data is needed to add labels and/or colors to your ggplot based on discrete variables not included in the PCA. Using the same <code>mutate</code> and <code>map</code> combo as before, along with the handy <code>dplyr::pull</code> function, we can plot this graph. <code>autoplot.prcomp()</code> can take any arguments that can be passed to <code>ggbiplot()</code>, so to see all of your options use <code>?ggbiplot</code>.</p>
+<p>Since the majority of the variance is explained by the first two principal components, let’s plot them against each other. Luckily, this is made easy by the <code>ggplot2</code> and <code>ggfortify</code> packages which gives an <code>autoplot</code> method for prcomp objects. Conveniently, we still have our <code>prcomp</code> object stored in the our <code>us_arrests_pca</code> tibble along with our original data. This is important as the original data is needed to add labels and/or colors to your ggplot based on discrete variables not included in the PCA. Using the same <code>mutate</code> and <code>map</code> combo as before, along with the handy <code>dplyr::pull</code> function, we can plot this graph. <code>autoplot.prcomp()</code> can take any arguments that can be passed to <code>ggbiplot()</code>, so to see all of your options use <code>?ggbiplot</code>.</p>
 <pre class="r"><code>us_arrests_pca %&gt;%
   mutate(
     pca_graph = map2(
@@ -200,16 +200,16 @@ var_exp</code></pre>
                  label.label = &quot;state&quot;,
                  label.repel = TRUE) +
         theme_bw() +
-        labs(x = &quot;Principle Component 1&quot;,
-             y = &quot;Principle Component 2&quot;,
-             title = &quot;First two principle components of PCA on USArrests dataset&quot;)
+        labs(x = &quot;Principal Component 1&quot;,
+             y = &quot;Principal Component 2&quot;,
+             title = &quot;First two principal components of PCA on USArrests dataset&quot;)
     )
   ) %&gt;%
   pull(pca_graph)</code></pre>
 <pre><code>## [[1]]</code></pre>
 <p><img src="/post/2018-02-01-pca-in-a-tidy-verse-framework_files/figure-html/pca-plot-1.png" width="960" style="display: block; margin: auto;" /></p>
 <p>If you notice the <code>[[1]]</code> above the graph, this method would automatically print each graph in the <code>pca_graph</code> column. This means that if you fit multiple pca graphs onto a grouped data set then this would automatically print all of the figures for you in one command. Another important thing to notice is the the <code>autoplot()</code> function simply returns a <code>gg</code> object and that can be extended just like any other <code>ggplot</code>.</p>
-<p>Looking at this figure, we are getting a lot more information about how these variables are related. For example, we can see that murder, rape, and assault arrest rates all have similar values alone the first principle component, which indicates that they are correlated with one another. We may have been able to figure that out using more basic methods, but this method allows us to see it in one figure. In addition, we are able to see how each of the observations in the data (i.e. states) relates to the variables. For example, California is characterized by high arrest rates (1st principle component) and high urban population (2nd principle component).</p>
+<p>Looking at this figure, we are getting a lot more information about how these variables are related. For example, we can see that murder, rape, and assault arrest rates all have similar values alone the first principal component, which indicates that they are correlated with one another. We may have been able to figure that out using more basic methods, but this method allows us to see it in one figure. In addition, we are able to see how each of the observations in the data (i.e. states) relates to the variables. For example, California is characterized by high arrest rates (1st principal component) and high urban population (2nd principal component).</p>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>
