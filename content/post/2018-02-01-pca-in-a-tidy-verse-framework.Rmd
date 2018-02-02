@@ -157,7 +157,7 @@ us_arrests_pca %>%
       .x = pca,
       .y = data,
       ~ autoplot(.x, loadings = TRUE, loadings.label = TRUE,
-                 laodings.label.repel = TRUE,
+                 loadings.label.repel = TRUE,
                  data = .y, label = TRUE,
                  label.label = "state",
                  label.repel = TRUE) +
