@@ -99,7 +99,11 @@ merged_subset %>%
 ```
 
 #Shiny App to explore phylogentic trees
-In addition to the `tree_subset` function in the `treeio` package. I have created a fairly basic shiny application that allows for users to interactively import a tree object and select different nodes that they want to subset the tree by. The code and instructions for running it can be found [here](https://github.com/tbradley1013/tree-subset-shiny). This app allows you to import most of the tree files types that `treeio` has methods for (see [here](http://bioconductor.org/packages/devel/bioc/vignettes/treeio/inst/doc/Importer.html) for info on different tree file types). 
+In addition to the `tree_subset` function in the `treeio` package. I have created a fairly basic shiny application that allows for users to interactively import a tree object and select different nodes that they want to subset the tree by. The code and instructions for running it can be found [here](https://github.com/tbradley1013/tree-subset-shiny). This app allows you to import most of the tree files types that `treeio` has methods for (see [here](http://bioconductor.org/packages/devel/bioc/vignettes/treeio/inst/doc/Importer.html) for info on different tree file types). Here is an example of the app:
+
+<center>
+![](/images/tree-subset-gif.gif)
+</center>
 
 
 #Conclusion
