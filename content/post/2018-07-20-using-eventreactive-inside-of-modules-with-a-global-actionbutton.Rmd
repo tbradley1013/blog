@@ -1,0 +1,225 @@
+---
+title: Using global input values inside of R Shiny modules
+author: Tyler Bradley
+date: '2018-07-20'
+slug: r-shiny-modules--using-global-inputs
+categories:
+  - R
+  - Shiny
+tags:
+  - rstats
+  - shiny
+  - modules
+---
+
+
+# Introduction
+
+This week, I have been working on a new shiny app. This app allows for similar figures to be rendered based on which summary statistic the user is interested in. There are four different figure types for the user to choose from, each of which are placed into their own `tabPanel`. This means copying the server code used to generate the graphs four different times. Following Hadley's words of wisdom in [R for Data Science](http://r4ds.had.co.nz/functions.html), I wanted to abstract this process into functions. In the world of [shiny](https://shiny.rstudio.com/), this means working with [modules](https://shiny.rstudio.com/articles/modules.html). 
+
+I have worked with modules before, but each time I have, the modules have been more overarching (i.e. they were large components of the app that did not share inputs) and I did not use them to repeat a similar process but simply to split up the code of a large app. In this case, I want the user to be able to select their inputs and click a submit button which will result in all of the graphs being updated. Then they will be able to switch between the `tabPanel`s without having to click any additional buttons or re-select any inputs. This desired functionality requires using the same `actionButton` and the same data set for multiple modules. However, I found out it isn't as easy as I expected for global inputs to be used within modules!
+
+To illustrate my issue, I have put together a super simple app that has an action button and returns the count of the number of times it has been pressed. This count is output twice, one of the counts represents the count output being rendered outside of a module and then other shows the count output being rendered inside of a module. In addition, the module code returns a text output stating whether the count is odd or even. This demonstrates how this issue impacts `eventReactive` functions.
+
+# Attempt No. 1
+
+On my first attempt, I simply abstracted my code so that the module would accept a `reactive` data set and simply passed my `actionButton` input (`input$submit` - creative, I know) straight into the module code. In my simplified app, I did something similar (just without the data set) and it looked like this:
+
+```{r,  eval = FALSE}
+library(shiny)
+
+# attempt #1
+count_module_ui <- function(id){
+  ns <- NS(id)
+  
+  tagList(
+    h4("Modulized Count"),
+    textOutput(ns("count_inside")),
+    h4("Is Modulized Count Odd or Even?"),
+    textOutput(ns("odd_even"))
+  )
+}
+
+
+count_module <- function(input, output, session){
+  
+  output$count_inside <- renderText(as.character(input$submit))
+  
+  temp_text <- eventReactive(input$submit, {
+    if (action() %% 2 == 0) {
+      return("even")
+    } else{
+      return("odd")
+    }
+  })
+  
+  output$odd_even <- renderText(temp_text())
+}
+
+ui <- fluidPage(
+  actionButton(
+    "submit", 
+    "Press me"
+  ),
+  h4("Count Regular"),
+  textOutput("count"),
+  count_module_ui("count_module")
+)
+
+
+
+server <- function(input, output, session) {
+  session$onSessionEnded(stopApp)
+  output$count <- renderText(as.character(input$submit))
+  callModule(count_module, "count_module")
+}
+
+
+shinyApp(ui = ui, server = server)
+```
+
+I thought for sure this would work. After all, in normal R functions, if a variable is not defined in function's local environment, it looks for it in its parent environment. I assumed, incorrectly, that modules would behave in a similar way, and since there is no `input$submit` defined in the module code, it would look to its parent environment for it. However, when I run this app, only the `h4()` portions of the module ui are there, no matter how many times I press the button!
+
+<center>
+![My first attempt](/images/modules-action-button/attempt-1.gif)
+</center>
+
+# Attempt No. 2
+
+It turns out that modules only recognize `input` and `output` objects that are explicitly defined in the module or passed as an argument to the module. So I then decided to try making the `input$submit` object an argument in the module code. It looked like this:
+
+```{r,  eval = FALSE}
+library(shiny)
+
+# attempt 2
+count_module_ui <- function(id){
+  ns <- NS(id)
+  
+  tagList(
+    h4("Modulized Count"),
+    textOutput(ns("count_inside")),
+    h4("Is Modulized Count Odd or Even?"),
+    textOutput(ns("odd_even"))
+  )
+}
+
+
+count_module <- function(input, output, session, action){
+  
+  output$count_inside <- renderText(as.character(action))
+  
+  temp_text <- eventReactive(action, {
+    if (action() %% 2 == 0) {
+      return("even")
+    } else{
+      return("odd")
+    }
+  })
+  
+  output$odd_even <- renderText(temp_text())
+}
+
+
+ui <- fluidPage(
+  actionButton(
+    "submit", 
+    "Press me"
+  ),
+  h4("Count Regular"),
+  textOutput("count"),
+  count_module_ui("count_module")
+)
+
+
+
+server <- function(input, output, session) {
+  session$onSessionEnded(stopApp)
+  output$count <- renderText(as.character(input$submit))
+  callModule(count_module, "count_module", action = input$submit)
+}
+
+
+shinyApp(ui = ui, server = server)
+```
+
+Notice that now there is an extra argument in my `count_module` server function that I pass `input$submit` to in my `server` code.
+
+When I loaded the app, I thought for sure I had gotten it to work because now the modulized count shows up as zero when the app loads. Unfortunately, that hope faded fairly quick when I pressed the action button and my non-modulized count increased and my modulized count stayed at zero...
+
+<center>
+![My second attempt](/images/modules-action-button/attempt-2.gif)
+</center>
+
+# Attempt No. 3 (Success!)
+
+Finally, I realized, thanks to [this StackOverflow answer](https://stackoverflow.com/questions/45169876/observeevent-shiny-function-used-in-a-module-does-not-work), that I had to pass the `input$submit` to the module as a *reactive*. This wasn't clear to me at first, since inputs are typically treated as dynamic elements. So to correct for this, I created a separate reactive element in my server code, `count_value`. This is simply the value of `input$submit`. I then passed this reactive element to my module. Here is the updated code:
+
+```{r,  eval = FALSE}
+library(shiny)
+
+# attempt 3
+count_module_ui <- function(id){
+  ns <- NS(id)
+  
+  tagList(
+    h4("Modulized Count"),
+    textOutput(ns("count_inside")),
+    h4("Is Modulized Count Odd or Even?"),
+    textOutput(ns("odd_even"))
+  )
+}
+
+
+count_module <- function(input, output, session, action){
+  
+  output$count_inside <- renderText(as.character(action()))
+  
+  temp_text <- eventReactive(action(), {
+    if (action() %% 2 == 0) {
+      return("even")
+    } else{
+      return("odd")
+    }
+  })
+  
+  output$odd_even <- renderText(temp_text())
+}
+
+
+ui <- fluidPage(
+  actionButton(
+    "submit", 
+    "Press me"
+  ),
+  h4("Count Regular"),
+  textOutput("count"),
+  count_module_ui("count_module")
+)
+
+
+
+server <- function(input, output, session) {
+  session$onSessionEnded(stopApp)
+  output$count <- renderText(as.character(input$submit))
+  count_value <- reactive(input$submit)
+  callModule(count_module, "count_module", action = count_value)
+}
+
+
+shinyApp(ui = ui, server = server)
+```
+
+
+**At last, Success!!**
+
+<center>
+![At last, success!!](/images/modules-action-button/attempt-3.gif)
+</center>
+
+Notice that in addition to adding the `count_value` reactive expression to my server code, I also passed this value to the module with out the normal `()` at the end of a reactive call. That is because the `()` at the end of this value is then passed to `action` *in* the module server code. So instead of `action = count_value()` in the `callModule` function, you pass `action = count_value` to `callModule` and then inside of the `count_module` function you call `action()` instead of `action`. 
+
+
+
+# Conclusion
+
+Using modules can be an extremely useful tool for both breaking up large apps but also when trying to avoid repetition in your server code. However, abstracting your shiny code to modules it not always as straight forward as abstracting your code to functions (not that that is always straightforward, either!). This post demonstrates a useful trick when you don't want to create repetitive `actionButton` input types (or any input for that matter) for each module but rather want modules to share input values!
