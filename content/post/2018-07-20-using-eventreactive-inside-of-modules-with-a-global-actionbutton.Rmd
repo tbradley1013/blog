@@ -40,7 +40,6 @@ count_module_ui <- function(id){
   )
 }
 
-
 count_module <- function(input, output, session){
   
   output$count_inside <- renderText(as.character(input$submit))
@@ -66,14 +65,11 @@ ui <- fluidPage(
   count_module_ui("count_module")
 )
 
-
-
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
   output$count <- renderText(as.character(input$submit))
   callModule(count_module, "count_module")
 }
-
 
 shinyApp(ui = ui, server = server)
 ```
@@ -103,7 +99,6 @@ count_module_ui <- function(id){
   )
 }
 
-
 count_module <- function(input, output, session, action){
   
   output$count_inside <- renderText(as.character(action))
@@ -119,7 +114,6 @@ count_module <- function(input, output, session, action){
   output$odd_even <- renderText(temp_text())
 }
 
-
 ui <- fluidPage(
   actionButton(
     "submit", 
@@ -130,14 +124,11 @@ ui <- fluidPage(
   count_module_ui("count_module")
 )
 
-
-
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
   output$count <- renderText(as.character(input$submit))
   callModule(count_module, "count_module", action = input$submit)
 }
-
 
 shinyApp(ui = ui, server = server)
 ```
@@ -169,7 +160,6 @@ count_module_ui <- function(id){
   )
 }
 
-
 count_module <- function(input, output, session, action){
   
   output$count_inside <- renderText(as.character(action()))
@@ -185,7 +175,6 @@ count_module <- function(input, output, session, action){
   output$odd_even <- renderText(temp_text())
 }
 
-
 ui <- fluidPage(
   actionButton(
     "submit", 
@@ -197,14 +186,12 @@ ui <- fluidPage(
 )
 
 
-
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
   output$count <- renderText(as.character(input$submit))
   count_value <- reactive(input$submit)
   callModule(count_module, "count_module", action = count_value)
 }
-
 
 shinyApp(ui = ui, server = server)
 ```
