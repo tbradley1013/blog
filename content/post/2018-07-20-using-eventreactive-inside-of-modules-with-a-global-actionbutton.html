@@ -38,7 +38,6 @@ count_module_ui &lt;- function(id){
   )
 }
 
-
 count_module &lt;- function(input, output, session){
   
   output$count_inside &lt;- renderText(as.character(input$submit))
@@ -64,14 +63,11 @@ ui &lt;- fluidPage(
   count_module_ui(&quot;count_module&quot;)
 )
 
-
-
 server &lt;- function(input, output, session) {
   session$onSessionEnded(stopApp)
   output$count &lt;- renderText(as.character(input$submit))
   callModule(count_module, &quot;count_module&quot;)
 }
-
 
 shinyApp(ui = ui, server = server)</code></pre>
 <p>I thought for sure this would work. After all, in normal R functions, if a variable is not defined in function’s local environment, it looks for it in its parent environment. I assumed, incorrectly, that modules would behave in a similar way, and since there is no <code>input$submit</code> defined in the module code, it would look to its parent environment for it. However, when I run this app, only the <code>h4()</code> portions of the module ui are there, no matter how many times I press the button!</p>
@@ -96,7 +92,6 @@ count_module_ui &lt;- function(id){
   )
 }
 
-
 count_module &lt;- function(input, output, session, action){
   
   output$count_inside &lt;- renderText(as.character(action))
@@ -112,7 +107,6 @@ count_module &lt;- function(input, output, session, action){
   output$odd_even &lt;- renderText(temp_text())
 }
 
-
 ui &lt;- fluidPage(
   actionButton(
     &quot;submit&quot;, 
@@ -123,14 +117,11 @@ ui &lt;- fluidPage(
   count_module_ui(&quot;count_module&quot;)
 )
 
-
-
 server &lt;- function(input, output, session) {
   session$onSessionEnded(stopApp)
   output$count &lt;- renderText(as.character(input$submit))
   callModule(count_module, &quot;count_module&quot;, action = input$submit)
 }
-
 
 shinyApp(ui = ui, server = server)</code></pre>
 <p>Notice that now there is an extra argument in my <code>count_module</code> server function that I pass <code>input$submit</code> to in my <code>server</code> code.</p>
@@ -156,7 +147,6 @@ count_module_ui &lt;- function(id){
   )
 }
 
-
 count_module &lt;- function(input, output, session, action){
   
   output$count_inside &lt;- renderText(as.character(action()))
@@ -172,7 +162,6 @@ count_module &lt;- function(input, output, session, action){
   output$odd_even &lt;- renderText(temp_text())
 }
 
-
 ui &lt;- fluidPage(
   actionButton(
     &quot;submit&quot;, 
@@ -184,14 +173,12 @@ ui &lt;- fluidPage(
 )
 
 
-
 server &lt;- function(input, output, session) {
   session$onSessionEnded(stopApp)
   output$count &lt;- renderText(as.character(input$submit))
   count_value &lt;- reactive(input$submit)
   callModule(count_module, &quot;count_module&quot;, action = count_value)
 }
-
 
 shinyApp(ui = ui, server = server)</code></pre>
 <p><strong>At last, Success!!</strong></p>
