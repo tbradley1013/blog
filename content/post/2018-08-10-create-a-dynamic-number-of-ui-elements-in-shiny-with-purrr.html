@@ -1,0 +1,418 @@
+---
+title: Create a dynamic number of UI elements in Shiny with purrr
+author: Tyler Bradley
+date: '2018-08-10'
+slug: create-a-dynamic-number-of-ui-elements-in-shiny-with-purrr
+categories:
+  - R
+  - Shiny
+tags:
+  - dplyr
+  - purrr
+  - rstats
+  - shiny
+  - tidyverse
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p><a href="https://purrr.tidyverse.org/"><code>purrr</code></a> is an incredibly powerful package that has greatly enhanced my R programming abilities. <code>purrr</code> has applications in pretty much any situation. One of the most useful situations, IMHO, is in the creation of a dynamic number of <a href="https://shiny.rstudio.com/"><code>shiny</code></a> UI elements. This can be extremely useful if you want to be able to create a dynamic number of ui elements (whether that be inputs or outputs) based on either user selection or the data being used. This post will walk through how to create a dynamic number of plots depending on how many parameters the user selects.</p>
+</div>
+<div id="background" class="section level1">
+<h1>Background</h1>
+<p>Before we get started, let’s load the libraries we will be using.</p>
+<pre class="r"><code>library(dataRetrieval)
+library(tidyverse)
+library(lubridate)
+library(shiny)
+library(shinyjs)
+library(plotly)</code></pre>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>In this post, I will be using the R package <a href="https://github.com/USGS-R/dataRetrieval"><code>dataRetrieval</code></a> provided by the USGS to access their public API. If you wish to know more about how to use this package I would recommend checking out <a href="https://cran.r-project.org/web/packages/dataRetrieval/vignettes/dataRetrieval.html">the package’s vignette</a>. The data used in this example app is daily water quality averages for three parameters (Temperature, Conductivity, and Dissolved Oxygen) measured in the Delaware River at the Ben Franklin Bridge in Philadelphia, PA. The code to pull the site info is placed at the top of the script outside of the ui and server code and looks like this:</p>
+<pre class="r"><code># usgs site number of ben franklin bridge site
+site &lt;- &quot;01467200&quot;
+
+site_info &lt;- whatNWISdata(siteNumbers = site, service = &quot;dv&quot;, statCd = &quot;00003&quot;)
+
+param_info &lt;- site_info$parm_cd %&gt;% unique() %&gt;% readNWISpCode()
+
+
+site_meta &lt;- site_info %&gt;% 
+  select(site_no, station_nm, parm_cd) %&gt;% 
+  left_join(param_info %&gt;% 
+              select(parameter_cd, srsname, parameter_units), 
+            by = c(&quot;parm_cd&quot; = &quot;parameter_cd&quot;)) %&gt;% 
+  # these are the parameters with data at this site 
+  filter(parm_cd %in% c(&quot;00010&quot;, &quot;00095&quot;, &quot;00300&quot;))
+
+param_choices &lt;- site_meta$parm_cd
+names(param_choices) &lt;- site_meta$srsname</code></pre>
+<p>The actual data is queried from the API using the <code>readNWISdv</code> function and reformatted to be easy to graph inside an <code>eventReactive</code> function at the top of the server code. This looks like this:</p>
+<pre class="r"><code>wq_data &lt;- eventReactive(input$submit, {
+      req(input$parameter, input$date)
+      
+      raw_data &lt;- readNWISdv(
+        siteNumbers = site, 
+        parameterCd = input$parameter,
+        startDate = input$date[[1]],
+        endDate = input$date[[2]]
+      )
+      
+      output &lt;- raw_data %&gt;% 
+        select(-contains(&quot;_cd&quot;)) %&gt;% 
+        gather(key = &quot;parameter&quot;, value = &quot;result&quot;, contains(&quot;X_&quot;)) %&gt;% 
+        mutate(parameter = str_replace_all(parameter, &quot;X_|_00003&quot;, &quot;&quot;)) %&gt;% 
+        left_join(site_meta, by = c(&quot;parameter&quot; = &quot;parm_cd&quot;, &quot;site_no&quot;)) 
+      
+      return(output)
+    })</code></pre>
+</div>
+<div id="plotting-function" class="section level2">
+<h2>Plotting function</h2>
+<p>Since the focus of this post is how to generate multiple plots and the data format after basic manipulation is the same for all three parameters, I have defined my plot generation as a function named <code>wq_plotly()</code> outside of the server code. This functions looks like this:</p>
+<pre class="r"><code>wq_plotly &lt;- function(data){
+  data %&gt;%
+    plot_ly(
+      x = ~Date,
+      y = ~result,
+      type = &quot;scatter&quot;,
+      mode = &quot;lines+markers&quot;,
+      marker = list(
+        size = 4,
+        color = &quot;blue&quot;
+      ),
+      line = list(
+        color = &quot;blue&quot;
+      ),
+      hoverinfo = &quot;text&quot;,
+      text = ~paste(
+        &quot;Site:&quot;, station_nm,
+        &quot;&lt;br&gt;Parameter:&quot;, srsname,
+        &quot;&lt;br&gt;Date Time:&quot;, format(Date),
+        &quot;&lt;br&gt;Result:&quot;, result,
+        &quot;&lt;br&gt;Units:&quot;, parameter_units
+      )
+    ) %&gt;%
+    layout(
+      title = paste(
+        unique(data$station_nm), &quot;&lt;br&gt;&quot;, 
+        unique(data$srsname), 
+        paste0(&quot;(&quot;, unique(data$parameter_units), &quot;)&quot;)
+      ),
+      titlefont = list(
+        size = 10
+      ),
+      xaxis = list(
+        title = &quot;&quot;
+      ),
+      yaxis = list(
+        title = &quot;&quot;
+      ),
+      margin = list(
+        t = 40
+      )
+    )
+}</code></pre>
+</div>
+</div>
+<div id="ui" class="section level1">
+<h1>UI</h1>
+<p>So the first part of the app is the ui code. This part is actually somewhat straightforward because all of the magic is gonna happen in our server code. We have to define our inputs for which parameters to graph (named <code>input$parameter</code>) and the desired date range (named <code>input$date</code>) and create an <code>actionButton</code> so that the user controls when new graphs are generated (my personal preference). I create these all within a single <code>fluidRow</code> with each in its own <code>column</code>.</p>
+<p>After that, I create a new <code>fluidRow</code> and simply have a <code>uiOutput</code> (with an id of <code>graphs_ui</code>) in it. This <code>uiOutput</code> will be created in our server code and contain all of the ui elements for our plots.</p>
+<p>Here is the full ui code:</p>
+<pre class="r"><code>ui &lt;- shinyUI(
+  fluidPage(
+    tags$head(
+      tags$style(HTML(&#39;.shiny-input-container{margin-top: 20px;}&#39;))
+    ),
+    div(
+      fluidRow(
+        column(
+          4, 
+          selectInput(
+            inputId = &quot;parameter&quot;,
+            label = &quot;Select Parameter(s):&quot;,
+            choices = param_choices,
+            multiple = TRUE
+          )
+        ),
+        column(
+          4,
+          dateRangeInput(
+            inputId = &quot;date&quot;,
+            label = &quot;Select Date Range:&quot;,
+            start = Sys.Date() - days(31),
+            end = Sys.Date()
+          )
+        ),
+        column(
+          4, 
+          actionButton(
+            inputId = &quot;submit&quot;,
+            label = &quot;Apply Changes!&quot;,
+            style = &quot;margin:40px;&quot;
+          )
+        )
+      ),
+      fluidRow(
+        div(
+          id = &quot;plot-container&quot;,
+          uiOutput(
+            outputId = &quot;graphs_ui&quot;
+          )
+        )
+      )
+    )
+  )
+)</code></pre>
+</div>
+<div id="server" class="section level1">
+<h1>Server</h1>
+<p>Now for the fun! The first part of the server code, which was shown above, is the <code>wq_data</code> reactive expression to query our data set. The next part involves generating a reactive object that contains a list of our graphs (a vector would work too). This is important because it is what will be used to generate the different inputs. Since I defined my graphing function above, I can call that with a combination of <code>dplyr::group_by</code>, <code>tidyr::nest</code>, <code>dplyr::mutate</code>, <code>purrr::map</code>, and <code>dplyr::pull</code>. This combination allows us to create unique graphs for each parameter and store them in a single list. The code looks like this:</p>
+<pre class="r"><code>graphs &lt;- eventReactive(input$submit, {
+  req(wq_data())
+      
+  wq_data() %&gt;% 
+    group_by(parameter) %&gt;% 
+    nest() %&gt;% 
+    mutate(
+       graphs = map(data, wq_plotly) 
+    ) %&gt;% 
+    arrange(parameter) %&gt;% 
+    pull(graphs)
+})</code></pre>
+<p>It is important to note that I have only tested this on <a href="https://plot.ly/r/"><code>plotly</code></a>, <a href="https://ggplot2.tidyverse.org/"><code>ggplot2</code></a>, and base graphics. This method only works with <code>plotly</code> and <code>ggplot2</code>. It does not work with base graphics because base plots cannot be saved as objects.</p>
+<p>Now that we have our list of graphs, we need to create our outputs. However, since we are giving the user the ability to choose how many parameters they want to create graphs for, <em>how do we know</em> how many outputs to create? With <code>purrr</code> and our list of graphs, <strong>we don’t need to know</strong> how many outputs need to be created. By iterating over our list of graphs with <code>iwalk</code> we can create as many outputs as there are graphs.</p>
+<p>In this case, we want to use <code>purrr::iwalk</code> (which is a variant of <code>walk</code>) because we want to use both the graph and its index. Using <code>iwalk(x, ...)</code> is the same as using <code>walk2(x, seq_along(x), ...)</code>. We use <code>walk</code> instead of <code>map</code> because we are not returning anything from the overall iteration, but rather only using it for its side effects. Using <code>walk</code> instead of <code>map</code> is similar to using an <code>observe</code> function instead of a <code>reactive</code> function. To further connect the comparison, we will use our <code>iwalk</code> function inside of an <code>observeEvent</code> function.</p>
+<p>Here is what the output generation looks like:</p>
+<pre class="r"><code>observeEvent(input$submit, {
+  req(graphs())
+      
+  iwalk(graphs(), ~{
+    output_name &lt;- paste0(&quot;plot_&quot;, .y)
+    output[[output_name]] &lt;- renderPlotly(.x)
+  })
+})</code></pre>
+<p>There are two simple pieces to our <code>iwalk</code> function. First, we define a unique <code>outputId</code> using the index of the plot in our list. Then using that <code>outputId</code> we can render our plotly object.</p>
+<p><strong>Note:</strong> defining an output using <code>output[[&quot;my_output_id&quot;]]</code> is the same as defining it as <code>output$my_output_id</code>.</p>
+<p>Finally, the last step of the server code is to create the ui elements! Remember, in our ui code, we defined the <code>uiOutput</code> for our graphs with an id of <code>graphs_ui</code>. So now, we will use <code>renderUI</code> and <code>purrr::imap</code> to create our ui elements. Since <code>render*</code> functions are similar to <code>reactive</code> functions, in that they return their output, we use <code>imap</code> rather than <code>iwalk</code>.</p>
+<p>Here is what our ui generation looks like:</p>
+<pre class="r"><code>output$graphs_ui &lt;- renderUI({
+  req(graphs())
+      
+  plots_list &lt;- imap(graphs(), ~{
+    tagList(
+      plotlyOutput(
+        outputId = paste0(&quot;plot_&quot;, .y)
+      ),
+      br()
+    )
+        
+  })
+      
+  tagList(plots_list)
+})</code></pre>
+<p>As you can see, we use the index of our plot list again to call each individual plot <code>outputId</code>. It is important to notice the <code>tagList(plots_list)</code> call at the end of the <code>renderUI</code> function. Since the output of <code>imap</code> is a list, <code>plots_list</code> is a list of ui elements and is not valid to be entered directly into the UI code. <code>tagList</code> takes care of this for us and combines multiple ui elements into one.</p>
+<p>Combining all of these elements, our final shiny app looks like this:</p>
+<center>
+<div class="figure">
+<img src="/images/dynamic-ui-elements/dynamic-graphs.gif" />
+
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Being able to create a dynamic number of ui elements, whether they are inputs or outputs, is an incredibly powerful tool when trying to scale your shiny apps! The method shown here was applied to creating a dynamic number of graphs based on the users input, but it is certainly not limited to that! You can see an example of how to apply this to creating <code>textInput</code> and <code>numericInput</code> dynamically based on column names of an uploaded dataset in this <a href="https://community.rstudio.com/t/creating-multiple-numeric-input-according-to-the-variables-of-an-uploaded-dataset/12293">RStudio Community thread</a>. Learning and using <code>purrr</code> can <strong><em>dramatically</em></strong> increase your capabilities within general R programming and building shiny applications!</p>
+<p>Finally, the full code for the shiny app looks like this:</p>
+<pre class="r"><code>library(dataRetrieval)
+library(tidyverse)
+library(lubridate)
+library(shiny)
+library(shinyjs)
+library(plotly)
+
+
+# usgs site number of ben franklin bridge site
+site &lt;- &quot;01467200&quot;
+
+site_info &lt;- whatNWISdata(siteNumbers = site, service = &quot;dv&quot;, statCd = &quot;00003&quot;)
+
+param_info &lt;- site_info$parm_cd %&gt;% unique() %&gt;% readNWISpCode()
+
+
+site_meta &lt;- site_info %&gt;% 
+  select(site_no, station_nm, parm_cd) %&gt;% 
+  left_join(param_info %&gt;% 
+              select(parameter_cd, srsname, parameter_units), 
+            by = c(&quot;parm_cd&quot; = &quot;parameter_cd&quot;)) %&gt;% 
+  filter(parm_cd %in% c(&quot;00010&quot;, &quot;00095&quot;, &quot;00300&quot;))
+
+param_choices &lt;- site_meta$parm_cd
+names(param_choices) &lt;- site_meta$srsname
+
+wq_plotly &lt;- function(data){
+  data %&gt;%
+    plot_ly(
+      x = ~Date,
+      y = ~result,
+      type = &quot;scatter&quot;,
+      mode = &quot;lines+markers&quot;,
+      marker = list(
+        size = 4,
+        color = &quot;blue&quot;
+      ),
+      line = list(
+        color = &quot;blue&quot;
+      ),
+      hoverinfo = &quot;text&quot;,
+      text = ~paste(
+        &quot;Site:&quot;, station_nm,
+        &quot;&lt;br&gt;Parameter:&quot;, srsname,
+        &quot;&lt;br&gt;Date Time:&quot;, format(Date),
+        &quot;&lt;br&gt;Result:&quot;, result,
+        &quot;&lt;br&gt;Units:&quot;, parameter_units
+      )
+    ) %&gt;%
+    layout(
+      title = paste(
+        unique(data$station_nm), &quot;&lt;br&gt;&quot;, 
+        unique(data$srsname), 
+        paste0(&quot;(&quot;, unique(data$parameter_units), &quot;)&quot;)
+      ),
+      titlefont = list(
+        size = 10
+      ),
+      xaxis = list(
+        title = &quot;&quot;
+      ),
+      yaxis = list(
+        title = &quot;&quot;
+      ),
+      margin = list(
+        t = 40
+      )
+    )
+}
+
+
+ui &lt;- shinyUI(
+  fluidPage(
+    tags$head(
+      tags$style(HTML(&#39;.shiny-input-container{margin-top: 20px;}&#39;))
+    ),
+    div(
+      fluidRow(
+        column(
+          4, 
+          selectInput(
+            inputId = &quot;parameter&quot;,
+            label = &quot;Select Parameter(s):&quot;,
+            choices = param_choices,
+            multiple = TRUE
+          )
+        ),
+        column(
+          4,
+          dateRangeInput(
+            inputId = &quot;date&quot;,
+            label = &quot;Select Date Range:&quot;,
+            start = Sys.Date() - days(31),
+            end = Sys.Date()
+          )
+        ),
+        column(
+          4, 
+          actionButton(
+            inputId = &quot;submit&quot;,
+            label = &quot;Apply Changes!&quot;,
+            style = &quot;margin:40px;&quot;
+          )
+        )
+      ),
+      fluidRow(
+        div(
+          id = &quot;plot-container&quot;,
+          uiOutput(
+            outputId = &quot;graphs_ui&quot;
+          )
+        )
+      )
+    )
+  )
+)
+
+
+server &lt;- shinyServer(
+  function(input, output, session){
+    session$onSessionEnded(stopApp)
+    
+    # query data from USGS API
+    wq_data &lt;- eventReactive(input$submit, {
+      req(input$parameter, input$date)
+      
+      raw_data &lt;- readNWISdv(
+        siteNumbers = site, 
+        parameterCd = input$parameter,
+        startDate = input$date[[1]],
+        endDate = input$date[[2]]
+      )
+      
+      output &lt;- raw_data %&gt;% 
+        select(-contains(&quot;_cd&quot;)) %&gt;% 
+        gather(key = &quot;parameter&quot;, value = &quot;result&quot;, contains(&quot;X_&quot;)) %&gt;% 
+        mutate(parameter = str_replace_all(parameter, &quot;X_|_00003&quot;, &quot;&quot;)) %&gt;% 
+        left_join(site_meta, by = c(&quot;parameter&quot; = &quot;parm_cd&quot;, &quot;site_no&quot;)) 
+      
+      return(output)
+    })
+    
+    # create a list of graphs - with one for each parameter selected
+    graphs &lt;- eventReactive(input$submit, {
+      req(wq_data())
+      
+      wq_data() %&gt;% 
+        group_by(parameter) %&gt;% 
+        nest() %&gt;% 
+        mutate(
+          graphs = map(data, wq_plotly) 
+        ) %&gt;% 
+        arrange(parameter) %&gt;% 
+        pull(graphs)
+    })
+    
+    # use purrr::iwalk to create a dynamic number of outputs
+    observeEvent(input$submit, {
+      req(graphs())
+      
+      iwalk(graphs(), ~{
+        output_name &lt;- paste0(&quot;plot_&quot;, .y)
+        output[[output_name]] &lt;- renderPlotly(.x)
+      })
+    })
+    
+    # use renderUI to create a dynamic number of output ui elements
+    output$graphs_ui &lt;- renderUI({
+      req(graphs())
+      
+      plots_list &lt;- imap(graphs(), ~{
+        tagList(
+          plotlyOutput(
+            outputId = paste0(&quot;plot_&quot;, .y)
+          ),
+          br()
+        )
+        
+      })
+      
+      tagList(plots_list)
+    })
+    
+  }
+)
+
+
+shinyApp(ui = ui, server = server)</code></pre>
+</div>
