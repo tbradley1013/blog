@@ -25,13 +25,17 @@ plugins = "jekyll-seo-tag"
     url = "https://twitter.com/tycbrad"
     weight = 3
 [[menu.main]]
+    name = "RStudio Community"
+    url = "https://community.rstudio.com/u/tbradley/summary"
+    weight = 4
+[[menu.main]]
     name = "LinkedIn"
     url = "https://www.linkedin.com/in/tyler-bradley-68707292/"
-    weight = 4
+    weight = 5
 [[menu.main]]
     name = " R-Bloggers"
     url = "https://www.r-bloggers.com/"
-    weight = 5
+    weight = 6
 
 [params]
     description = "A Blog site about R and data science by an Arsenal Fan"
