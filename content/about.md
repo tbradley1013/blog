@@ -5,7 +5,7 @@ date = "2018-08-21"
 
 <img src="/images/headshot-tyler-bradley-small.jpg", width="250px", height="200px", align = "right"/>
 
-My Name is Tyler Bradley and I am Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. Some of my responsibilites include:
+My Name is Tyler Bradley and I am an Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. Some of my responsibilites include:
 
   * Manage and maintain an Ubuntu server used to host [RStudio Connect](https://www.rstudio.com/products/connect/)
   * Create and maintain an internal R package used to connect to and query data from multiple internal databases. The functions used to query data allow for quick and structured queries to be run against these databases programmatically. This package also contains several functions to be used in accordance with the data that is queried from the databases.
