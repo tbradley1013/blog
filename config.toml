@@ -21,7 +21,7 @@ publishDir = "../tbradley1013.github.io"
 [params]
   subtitle = "A blog about R by an Arsenal fan"
   disqus = "goonR-blog"
-  googleAnalytics = ""
+  googleAnalytics = "UA-115670447-2"
   highlightjs = "androidstudio"
   highlightjs_extra_languages = ["r", "yaml"]
   dateFormat = "02 Jan 2006"
