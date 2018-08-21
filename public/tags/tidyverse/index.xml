@@ -6,10 +6,37 @@
     <description>Recent content in Tidyverse on goonR blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 10 Aug 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 10 Aug 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/tidyverse/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Create a dynamic number of UI elements in Shiny with purrr</title>
+      <link>/2018/08/10/create-a-dynamic-number-of-ui-elements-in-shiny-with-purrr/</link>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/08/10/create-a-dynamic-number-of-ui-elements-in-shiny-with-purrr/</guid>
+      <description>Introductionpurrr is an incredibly powerful package that has greatly enhanced my R programming abilities. purrr has applications in pretty much any situation. One of the most useful situations, IMHO, is in the creation of a dynamic number of shiny UI elements. This can be extremely useful if you want to be able to create a dynamic number of ui elements (whether that be inputs or outputs) based on either user selection or the data being used.</description>
+    </item>
+    
+    <item>
+      <title>PCA in a tidy(verse) framework</title>
+      <link>/2018/02/01/pca-in-a-tidy-verse-framework/</link>
+      <pubDate>Thu, 01 Feb 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/02/01/pca-in-a-tidy-verse-framework/</guid>
+      <description>IntroductionThe other day, a question was posted on RStudio Community about performing Principal Component Analysis (PCA) in a tidyverse workflow. Conveniently, I had literally just worked through this process the day before and was able to post an answer. While most questions and answers are good as they are on forum sites, I thought this one might be worth exploring a little more since using the tidyverse framework makes PCA much easier, in my opinion.</description>
+    </item>
+    
+    <item>
+      <title>Creating, Writing, Querying, and Modifying SQL Database from R using odbc, dbplyr, and DBI</title>
+      <link>/2017/08/26/sql-management-in-r/</link>
+      <pubDate>Sat, 26 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/2017/08/26/sql-management-in-r/</guid>
+      <description>IntroductionRecently, I have been building shiny apps for work. The app that I am currently working on is an interface to a database for storing information about laboratory samples being collected. In addition to building the shiny app for my coworkers to interact with the database, I also was tasked with creating and building the database. I have never build a SQL database from scratch, but luckily the odbc and the DBI packages make it fairly straight foreward.</description>
+    </item>
     
     <item>
       <title>Exploring English Premier League Historical Match Results</title>

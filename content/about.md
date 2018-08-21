@@ -1,7 +1,7 @@
----
-title: "About"
-date: "2016-05-05T21:48:51-07:00"
----
++++
+title = "About"
+date = "2018-08-21"
++++
 
 <img src="/images/headshot-tyler-bradley-small.jpg", width="250px", height="200px", align = "right"/>
 

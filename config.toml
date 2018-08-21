@@ -1,58 +1,66 @@
-baseurl = "https://tbradley1013.github.io"
+baseurl = "/"
 languageCode = "en-us"
 title = "goonR blog"
-theme = "hugo-lithium-theme"
-googleAnalytics = ""
-disqusShortname = "goonR-blog"
-publishDir = "../tbradley1013.github.io"
+author = "Tyler Bradley"
+theme = "blackburn"
+canonifyurls = true
+paginate = 10
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 plugins = "jekyll-seo-tag"
+publishDir = "../tbradley1013.github.io"
 
 
 [permalinks]
     post = "/:year/:month/:day/:slug/"
 
-[[menu.main]]
-    name = "About"
-    url = "/about/"
-    weight = 1
-[[menu.main]]
-    name = "GitHub"
-    url = "https://github.com/tbradley1013"
-    weight = 2
-[[menu.main]]
-    name = "Twitter"
-    url = "https://twitter.com/tycbrad"
-    weight = 3
-[[menu.main]]
-    name = "RStudio Community"
-    url = "https://community.rstudio.com/u/tbradley/summary"
-    weight = 4
-[[menu.main]]
-    name = "LinkedIn"
-    url = "https://www.linkedin.com/in/tyler-bradley-68707292/"
-    weight = 5
-[[menu.main]]
-    name = " R-Bloggers"
-    url = "https://www.r-bloggers.com/"
-    weight = 6
+[indexes]
+  tag = "tags"
+  topic = "topics"
+
 
 [params]
-    description = "A Blog site about R and data science by an Arsenal Fan"
+  subtitle = "A blog about R by an Arsenal fan"
+  disqus = "goonR-blog"
+  googleAnalytics = ""
+  highlightjs = "androidstudio"
+  highlightjs_extra_languages = ["r", "yaml"]
+  dateFormat = "02 Jan 2006"
+  
 
-    # options for highlight.js (version, additional languages, and theme)
-    highlightjsVersion = "9.11.0"
-    highlightjsCDN = "//cdn.bootcss.com"
-    highlightjsLang = ["r", "yaml"]
-    highlightjsTheme = "github"
 
-    MathJaxCDN = "//cdn.bootcss.com"
-    MathJaxVersion = "2.7.1"
+[menu]
+  [[menu.main]]
+    name = "Home"
+    pre = "<i class='fa fa-home fa-fw'></i>"
+    weight = 1
+    identifier = "home"
+    url = "/"
+  [[menu.main]]
+    name = "Posts"
+    pre = "<i class='fa fa-list fa-fw'></i>"
+    weight = 2
+    identifier = "post"
+    url = "/post/"
+  [[menu.main]]
+    name = "About"
+    pre = "<i class='fa fa-user fa-fw'></i>"
+    weight = 3
+    identifier = "about"
+    url = "/about/"
+  [[menu.main]]
+    name = "RStudio Community"
+    weight = 4
+    url = "https://community.rstudio.com/u/tbradley/summary"
+    
+    
+[social]
+  twitter = "tycbrad"
+  github = "tbradley1013"
+  stackoverflow = "7133355"
+  linkedin = "tyler-bradley-68707292/"
 
-    [params.logo]
-    url = "arsenal-buttton.jpg"
-    width = 30
-    height = 50
-    alt = "Logo"
+
+
+
 
 

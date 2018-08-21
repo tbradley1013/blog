@@ -6,10 +6,64 @@
     <description>Recent content on goonR blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 10 Aug 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 21 Aug 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>About</title>
+      <link>/about/</link>
+      <pubDate>Tue, 21 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/about/</guid>
+      <description>My Name is Tyler Bradley and I am Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. I am a PhD student at Drexel University studying Environmental Engineering, more specifically using data science to solve distribution system water quality issues. I am huge fan of R and the tidyverse and all that it includes.</description>
+    </item>
+    
+    <item>
+      <title>Create a dynamic number of UI elements in Shiny with purrr</title>
+      <link>/2018/08/10/create-a-dynamic-number-of-ui-elements-in-shiny-with-purrr/</link>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/08/10/create-a-dynamic-number-of-ui-elements-in-shiny-with-purrr/</guid>
+      <description>Introductionpurrr is an incredibly powerful package that has greatly enhanced my R programming abilities. purrr has applications in pretty much any situation. One of the most useful situations, IMHO, is in the creation of a dynamic number of shiny UI elements. This can be extremely useful if you want to be able to create a dynamic number of ui elements (whether that be inputs or outputs) based on either user selection or the data being used.</description>
+    </item>
+    
+    <item>
+      <title>Using global input values inside of R Shiny modules</title>
+      <link>/2018/07/20/r-shiny-modules--using-global-inputs/</link>
+      <pubDate>Fri, 20 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/07/20/r-shiny-modules--using-global-inputs/</guid>
+      <description>IntroductionThis week, I have been working on a new shiny app. This app allows for similar figures to be rendered based on which summary statistic the user is interested in. There are four different figure types for the user to choose from, each of which are placed into their own tabPanel. This means copying the server code used to generate the graphs four different times. Following Hadley’s words of wisdom in R for Data Science, I wanted to abstract this process into functions.</description>
+    </item>
+    
+    <item>
+      <title>Subsetting Phylogenetic Trees</title>
+      <link>/2018/06/19/subsetting-phylogenetic-trees/</link>
+      <pubDate>Tue, 19 Jun 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/06/19/subsetting-phylogenetic-trees/</guid>
+      <description>IntroductionIn the past few months, I have been introduced to and started working with phylogenetic trees. The trees I have been working with contain the entire tree of life for bacteria. Needless to say, they are huge. At first, I was told that I could download a program that would let me view the tree and search for particular species on the tree, but of course, I immediately looked for a better solution using R.</description>
+    </item>
+    
+    <item>
+      <title>PCA in a tidy(verse) framework</title>
+      <link>/2018/02/01/pca-in-a-tidy-verse-framework/</link>
+      <pubDate>Thu, 01 Feb 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/2018/02/01/pca-in-a-tidy-verse-framework/</guid>
+      <description>IntroductionThe other day, a question was posted on RStudio Community about performing Principal Component Analysis (PCA) in a tidyverse workflow. Conveniently, I had literally just worked through this process the day before and was able to post an answer. While most questions and answers are good as they are on forum sites, I thought this one might be worth exploring a little more since using the tidyverse framework makes PCA much easier, in my opinion.</description>
+    </item>
+    
+    <item>
+      <title>Creating, Writing, Querying, and Modifying SQL Database from R using odbc, dbplyr, and DBI</title>
+      <link>/2017/08/26/sql-management-in-r/</link>
+      <pubDate>Sat, 26 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/2017/08/26/sql-management-in-r/</guid>
+      <description>IntroductionRecently, I have been building shiny apps for work. The app that I am currently working on is an interface to a database for storing information about laboratory samples being collected. In addition to building the shiny app for my coworkers to interact with the database, I also was tasked with creating and building the database. I have never build a SQL database from scratch, but luckily the odbc and the DBI packages make it fairly straight foreward.</description>
+    </item>
     
     <item>
       <title>Exploring English Premier League Historical Match Results</title>
@@ -17,17 +71,7 @@
       <pubDate>Thu, 10 Aug 2017 00:00:00 +0000</pubDate>
       
       <guid>/2017/08/10/epl-opening-weekend/</guid>
-      <description>Introduction
-I was listening to Jeff Atwood’s interview on the podcast Developer on Fire and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about #rstats but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any.</description>
-    </item>
-    
-    <item>
-      <title>About</title>
-      <link>/about/</link>
-      <pubDate>Thu, 05 May 2016 21:48:51 -0700</pubDate>
-      
-      <guid>/about/</guid>
-      <description>My Name is Tyler Bradley and I am Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. I am a PhD student at Drexel University studying Environmental Engineering, more specifically using data science to solve distribution system water quality issues. I am huge fan of R and the tidyverse and all that it includes.</description>
+      <description>IntroductionI was listening to Jeff Atwood’s interview on the podcast Developer on Fire and he said something that struck home with me. It was along the lines of, “The best time to start blogging is yesterday.” I have been considering starting a blog about #rstats but had been putting it off because of any number of reasons. But after listening to his interview, I decided now was as good of a time as any.</description>
     </item>
     
   </channel>

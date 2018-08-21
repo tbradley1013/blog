@@ -6,10 +6,28 @@
     <description>Recent content in Tags on goonR blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 10 Aug 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 26 Aug 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Dbi</title>
+      <link>/tags/dbi/</link>
+      <pubDate>Sat, 26 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/dbi/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Dplyr</title>
+      <link>/tags/dplyr/</link>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/dplyr/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Epl</title>
@@ -21,20 +39,92 @@
     </item>
     
     <item>
+      <title>Ggtree</title>
+      <link>/tags/ggtree/</link>
+      <pubDate>Tue, 19 Jun 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/ggtree/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Modules</title>
+      <link>/tags/modules/</link>
+      <pubDate>Fri, 20 Jul 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/modules/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Odbc</title>
+      <link>/tags/odbc/</link>
+      <pubDate>Sat, 26 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/odbc/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Pca</title>
+      <link>/tags/pca/</link>
+      <pubDate>Thu, 01 Feb 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/pca/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Purrr</title>
+      <link>/tags/purrr/</link>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/purrr/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>Rstats</title>
       <link>/tags/rstats/</link>
-      <pubDate>Thu, 10 Aug 2017 00:00:00 +0000</pubDate>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
       
       <guid>/tags/rstats/</guid>
       <description></description>
     </item>
     
     <item>
+      <title>Shiny</title>
+      <link>/tags/shiny/</link>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/shiny/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Sqlite</title>
+      <link>/tags/sqlite/</link>
+      <pubDate>Sat, 26 Aug 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/sqlite/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>Tidyverse</title>
       <link>/tags/tidyverse/</link>
-      <pubDate>Thu, 10 Aug 2017 00:00:00 +0000</pubDate>
+      <pubDate>Fri, 10 Aug 2018 00:00:00 +0000</pubDate>
       
       <guid>/tags/tidyverse/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Treeio</title>
+      <link>/tags/treeio/</link>
+      <pubDate>Tue, 19 Jun 2018 00:00:00 +0000</pubDate>
+      
+      <guid>/tags/treeio/</guid>
       <description></description>
     </item>
     
