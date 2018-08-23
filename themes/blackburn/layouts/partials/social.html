@@ -143,6 +143,11 @@
     </li>
     {{ end }}
     
+    {{ with .Site.Social.rstudiocommunity }}
+    <li class="pure-menu-item">
+      <a class="pure-menu-link" href="https://community.rstudio.com/u/{{ . }}" target="_blank"><img src = "/images/community-favicon.png" height = 14px width = 14px>   RStudio Community</a>
+    </li>
+    {{ end }}
 
     {{ with .Site.Social.stackoverflow }}
     <li class="pure-menu-item">
@@ -150,11 +155,6 @@
     </li>
     {{ end }}
     
-    {{ with .Site.Social.rstudiocommunity }}
-    <li class="pure-menu-item">
-      <a class="pure-menu-link" href="https://community.rstudio.com/u/{{ . }}" target="_blank">RStudio Community</a>
-    </li>
-    {{ end }}
 
     {{ with .Site.Social.serverfault }}
     <li class="pure-menu-item">
