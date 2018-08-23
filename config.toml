@@ -47,10 +47,7 @@ publishDir = "../tbradley1013.github.io"
     weight = 3
     identifier = "about"
     url = "/about/"
-  [[menu.main]]
-    name = "RStudio Community"
-    weight = 4
-    url = "https://community.rstudio.com/u/tbradley/summary"
+
     
     
 [social]
@@ -58,6 +55,7 @@ publishDir = "../tbradley1013.github.io"
   github = "tbradley1013"
   stackoverflow = "7133355"
   linkedin = "tyler-bradley-68707292/"
+  rstudiocommunity = "tbradley/summary"
 
 
 
