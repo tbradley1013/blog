@@ -46,7 +46,7 @@ community_icon_orig <- image_read("https://www.rstudio.com/wp-content/uploads/20
 community_icon_orig
 ```
 
-Right now the image looks great, but we want our icon to be grayscaled to match the other icons on the social link. We can do this with just a little `magick`! First, we will creaete a background icon that is simply the RStudio Community icon shape in all black. This is because the inner portion of the other social icons is a black color (`#191818` to be exact) and the community icon is white when we first load it. Using `image_composite`, in conjunction with `image_channel` (to convert to grayscale) and `image_transparent` (to remove the square background created by `image_channel`) we can superimpose the black background over the white portions of the icon. You can create the background for the icon like this:
+Right now the image looks great, but we want our icon to be gray scaled to match the other icons on the social link. We can do this with just a little `magick`! First, we will create a background icon that is simply the RStudio Community icon shape in all black. This is because the inner portion of the other social icons is a black color (`#191818` to be exact) and the community icon is white when we first load it. Using `image_composite`, in conjunction with `image_channel` (to convert to gray scale) and `image_transparent` (to remove the square background created by `image_channel`) we can superimpose the black background over the white portions of the icon. You can create the background for the icon like this:
 
 
 ```{r icon-background, fig.align="center"}
@@ -58,7 +58,7 @@ icon_background <- community_icon_orig %>%
 icon_background
 ```
 
-Now that we have the background to use it in our `image_composite` function to create our final commmunity icon with a gray outer portion and a   
+Now that we have the background to use it in our `image_composite` function to create our final community icon with a gray outer portion and a black `R` in the center. This is what the final icon will look like!
 
 ```{r manipulate-image, fig.align = "center"}
 community_icon <- community_icon_orig %>% 
@@ -68,3 +68,203 @@ community_icon <- community_icon_orig %>%
 
 community_icon
 ```
+
+Now we just need to save our image to our blogdown repository. This image should be saved in the `static/images/` folder of your blogdown repository. Saving it in this location will allow for us to add it to the blogs menu from any location. We will also scale our image to a width and height of 14px
+
+```{r save-image, eval = FALSE}
+community_icon %>% 
+  image_scale("14") %>% 
+  image_write("static/images/community-icon.png")
+```
+
+# Adding the Icon to Social List
+The blackburn theme provides easy to configure social links via HMTL partials. This allows users to enter their socials links like this in their `config.toml` file:
+
+```
+[social]
+  twitter = "*"
+  github = "*"
+  stackoverflow = "*"
+  linkedin = "*"
+```
+
+While this setup is very convenient for sites that are included with the default theme, it makes it slightly more difficult to add custom themes. However, it is certainly not impossible! First, let's take a look at the HTML partial for the social links. This can be found at `themes/blackburn/layours/partials/social.html`. This HTML file is arranged in the order that the social links will appear if they are included in the config file. Here is an example of a few of the built in blocks within this file:
+
+```
+<!-- Twitter -->
+{{ with .Site.Social.twitter }}
+<li class="pure-menu-item">
+  <a class="pure-menu-link" href="https://twitter.com/{{ . }}" target="_blank"><i class="fa fa-twitter-square fa-fw"></i>Twitter</a>
+</li>
+{{ end }}
+
+<!-- Github -->
+{{ with .Site.Social.github }}
+<li class="pure-menu-item">
+  <a class="pure-menu-link" href="https://github.com/{{ . }}" target="_blank"><i class="fa fa-github-square fa-fw"></i>GitHub</a>
+</li>
+{{ end }}
+
+
+```
+
+As we can see, it follows a pretty standard format. We can create our own custom social for RStudio Community like this:
+
+```
+<!-- RStudio Community -->
+{{ with .Site.Social.rstudiocommunity }}
+<li class="pure-menu-item">
+  <a class="pure-menu-link" href="https://community.rstudio.com/u/{{ . }}" target="_blank"><img src = "/images/community-icon.png" id = "community-icon">RStudio Community</a>
+</li>
+{{ end }}
+
+```
+
+There are a few important changes that are worth noting here. First, we created a name for the social link that will used in the config file by changing the content of the first line to `.Site.Social.rstudiocommunity`. Then we changed the `href` link to the base url for an RStudio Community user with the partial syntax that will input the value from the config file - `"https://community.rstudio.com/u/{{ . }}"`. We also had to change the text for the link to "RStudio Community". Finally, we had to insert the image that we created in the first section of this post! That is done with this piece of code: 
+
+```
+<img src = "/images/community-icon.png" id = "community-icon">
+```
+
+The leading `/` is important because it tells the site that it should always be looking for `images/` folder in the base directory and not in an individual page directory. This is the same way you would reference an image from inside of a blog post! We also can add an id for our image so that we can add some custom styling to it (which we will cover next). 
+
+Now we can go back to our `config.toml` file and add a new line for our RStudio Community account! Now the social section will look like this:
+
+```
+[social]
+  twitter = "*"
+  github = "*"
+  stackoverflow = "*"
+  linkedin = "*"
+  rstudiocommunity = "*"
+```
+
+
+# Customize CSS
+Now if you re render your site, you will see that your RStudio Community tag is included in your sidebar menu! Unfortunately, since the link has a long name, it doesn't fit perfectly with the default width of the blackburn's side bar menu. Luckily, all this takes is a little manipulation of the sites CSS, more specifically, the `themes/blackburn/static/css/side-menu.css` file. I am not going to copy and paste the whole file here, but I will include all of the blocks (and their line numbers) that I modified. If you are customizing for a different theme or social link, I would recommend using the developer tools in your browser to interactively play with different CSS inputs.
+
+Here are the blocks that were changed:
+
+```
+/* 
+Increase menu size from 150px to 175px
+lines 31-38
+*/
+#layout.active #menu {
+    left: 175px;
+    width: 175px;
+}
+
+#layout.active .menu-link {
+    left: 175px;
+}
+
+
+/* 
+Increase padding between content and side menu and 
+increase the max width of content
+Also increase the padding between the header and side 
+bar menu
+lines 42-56
+*/
+.content {
+    margin: 0 auto;
+    padding: 0 2.5em;
+    max-width: 1200px;
+    margin-bottom: 50px;
+    line-height: 1.6em;
+}
+
+.header {
+     margin: 0;
+     color: #333;
+     text-align: center;
+     padding: 2.5em 2.5em 0;
+     border-bottom: 1px solid #eee;
+ }
+ 
+ 
+/* 
+Again, increasing menu width from 150px to 175px
+lines 82-93
+*/
+#menu {
+  margin-left: -175px; /* "#menu" width */
+  width: 175px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1000; /* so the menu or its navicon stays above all content */
+  background: #191818;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 
+Edit the responsive styles so that when the screen is small or large 
+menu looks right. In here we alter the menu widths from 150 to 175 and 
+the left padding from 2 to 2.5 for .header and .content
+*/
+@media (min-width: 48em) {
+
+    .header,
+    .content {
+        padding-left: 2.5em;
+        padding-right: 2em;
+    }
+
+    #layout {
+        padding-left: 175px; /* left col width "#menu" */
+        left: 0;
+    }
+    #menu {
+        left: 175px;
+    }
+
+    .menu-link {
+        position: fixed;
+        left: 175px;
+        display: none;
+    }
+
+    #layout.active .menu-link {
+        left: 175px;
+    }
+}
+
+@media (max-width: 48em) {
+    /* Only apply this when the window is small. Otherwise, the following
+    case results in extra padding on the left:
+        * Make the window small.
+        * Tap the menu to trigger the active state.
+        * Make the window large again.
+    */
+    #layout.active {
+        position: relative;
+        left: 175px;
+    }
+}
+
+```
+
+Finally, we can add some custom styling for our community icon! This can be placed anywhere in this `side-menu.css` file and looks like this:
+
+```
+#community-icon {
+  padding-left:3px;
+  margin-right:0.4em;
+}
+```
+
+
+Our final product looks like this
+
+<center>
+![](/images/sidebar-menu-example.png)
+</center>
+
+# Conclusion
+This post demonstrates how to add an RStudio Community (or any site really) social link to the provided links in the Blackburn theme. While this is specific to the Blackburn theme, a lot of Hugo themes use HTML partials to include things from the `config.toml` file and this example could likely be extended to other themes after exploring the different files provided in a given themes `layout` folder. 
+
+I hope you consider using [RStudio Community](http://community.rstudio.com) for all of your R, RStudio, Shiny, and tidyverse related questions! In addition, adding a link to your blog page will help increase awareness of the site! 
