@@ -33,8 +33,17 @@ As mentioned above, all of the icons included next to the default social links a
 
 The image we are going to use is the same one used as the favicon when you open RStudio Community. If you don't know what a favicon is, it is simply the image that you see on the left hand side of a browser tab. To get this image, we can use the `image_read` function. Before we do that, let's load the packages that 
 
-```{r packages}
+```{r packages, warning = FALSE, message = FALSE}
 library(magrittr)
 library(magick)
-
 ```
+
+To do load the image we can use the following command
+
+```{r load-image}
+rstudio_icon <- image_read("https://www.rstudio.com/wp-content/uploads/2018/03/community-favicon-512.png")
+
+rstudio_icon
+```
+
+Right now the image looks great, but we want our icon to be grayscaled to match the other icons on the social link. We can do this with a combo of `image_channel` (to convert to grayscale), `image_contrast` (to brighten the contrast between gray and white), and `image_transparent` (to remove the background created by `image_channel`)
