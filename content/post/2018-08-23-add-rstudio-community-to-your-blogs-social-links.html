@@ -1,0 +1,60 @@
+---
+title: Add RStudio Community to your blogs social links - Blackburn Theme
+author: Tyler Bradley
+date: '2018-08-24'
+slug: add-rstudio-community-to-your-blogs-social-links
+categories:
+  - R
+tags:
+  - rstats
+  - blogdown
+  - magick
+  - rstudio-community
+  - blackburn
+  - hugo
+description: ''
+topics: []
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Recently, I switched themes for my blog to the <a href="https://github.com/yoshiharuyamashita/blackburn">blackburn</a> theme and I love it! Luckily, the <a href="https://github.com/rstudio/blogdown"><code>blogdown</code></a> package makes this super easy to do within R! If you haven’t used <code>blogdown</code>, I <strong><em>highly</em></strong> recommend you take a look at it for setting up your blog. One of the nice features of the blackburn theme, is that it provides easy to add “social” tags that can be configured in your <code>config.toml</code> file. The built in social tags all come with nice <a href="https://fontawesome.com/">font-awesome</a> icons to their left.</p>
+<p>However, one of the social media sites that I visit the most is not included on the provided sites, and that is <a href="https://community.rstudio.com/">RStudio Community</a>! RStudio Community is a web-forum that is hosted by RStudio to provide community Q and A for all things related to R, RStudio products, and packages provided by RStudio. If you haven’t been there before, I highly recommend that you check it out! Since this site is not included in blackburn’s social links, I had to add it myself. This post will walk through how to edit the blackburn theme to include custom social links, specifically for RStudio Community.</p>
+<p>This post assumes that you have already successfully set up your blog using the <code>blackburn</code> theme. If not, you should check out a few of these links:</p>
+<ol style="list-style-type: decimal">
+<li><a href="https://bookdown.org/yihui/blogdown/">Blogdown book</a></li>
+<li><a href="https://themes.gohugo.io/blackburn/">Blackburn Theme</a></li>
+<li><a href="https://mltconsecol.github.io/post/20170123_blogdown_hugo/">Blog post using blogdown setup with blackburn theme</a></li>
+<li><a href="https://tclavelle.github.io/blog/blogdown_github/">Blog post about blogdown setup in general</a></li>
+</ol>
+</div>
+<div id="creating-the-icon" class="section level1">
+<h1>Creating the icon</h1>
+<p>As mentioned above, all of the icons included next to the default social links are added via font-awesome. Unfortunately, neither RStudio or RStudio Community have a font awesome icon, as of this writing. So before we add the link to our social list, we will have to create our own icon (or in this case, simply an image) for this item. This can be done with a little help from the <a href="https://github.com/ropensci/magick"><code>magick</code></a> package.</p>
+<p>The image we are going to use is the same one used as the favicon when you open RStudio Community. If you don’t know what a favicon is, it is simply the image that you see on the left hand side of a browser tab. To get this image, we can use the <code>image_read</code> function. Before we do that, let’s load the packages that</p>
+<pre class="r"><code>library(magrittr)
+library(magick)</code></pre>
+<p>To load the image we can use the following command</p>
+<pre class="r"><code>community_icon_orig &lt;- image_read(&quot;https://www.rstudio.com/wp-content/uploads/2018/03/community-favicon-512.png&quot;)
+
+community_icon_orig</code></pre>
+<p><img src="/post/2018-08-23-add-rstudio-community-to-your-blogs-social-links_files/figure-html/load-image-1.png" width="256" style="display: block; margin: auto;" /></p>
+<p>Right now the image looks great, but we want our icon to be grayscaled to match the other icons on the social link. We can do this with just a little <code>magick</code>! First, we will creaete a background icon that is simply the RStudio Community icon shape in all black. This is because the inner portion of the other social icons is a black color (<code>#191818</code> to be exact) and the community icon is white when we first load it. Using <code>image_composite</code>, in conjunction with <code>image_channel</code> (to convert to grayscale) and <code>image_transparent</code> (to remove the square background created by <code>image_channel</code>) we can superimpose the black background over the white portions of the icon. You can create the background for the icon like this:</p>
+<pre class="r"><code>icon_background &lt;- community_icon_orig %&gt;% 
+  image_channel(channel = &quot;Gray&quot;) %&gt;% 
+  image_transparent(color = &quot;black&quot;) %&gt;% 
+  image_composite(image_blank(512, 512, &quot;#191818&quot;), &quot;In&quot;)
+
+icon_background</code></pre>
+<p><img src="/post/2018-08-23-add-rstudio-community-to-your-blogs-social-links_files/figure-html/icon-background-1.png" width="256" style="display: block; margin: auto;" /></p>
+<p>Now that we have the background to use it in our <code>image_composite</code> function to create our final commmunity icon with a gray outer portion and a</p>
+<pre class="r"><code>community_icon &lt;- community_icon_orig %&gt;% 
+  image_channel(channel = &quot;Gray&quot;) %&gt;% 
+  image_transparent(color = &quot;black&quot;) %&gt;% 
+  image_composite(icon_background, &quot;Subtract&quot;) 
+
+community_icon</code></pre>
+<p><img src="/post/2018-08-23-add-rstudio-community-to-your-blogs-social-links_files/figure-html/manipulate-image-1.png" width="256" style="display: block; margin: auto;" /></p>
+</div>

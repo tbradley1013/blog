@@ -1,7 +1,7 @@
 ---
 title: Add RStudio Community to your blogs social links - Blackburn Theme
 author: Tyler Bradley
-date: '2018-08-23'
+date: '2018-08-24'
 slug: add-rstudio-community-to-your-blogs-social-links
 categories:
   - R
@@ -38,12 +38,33 @@ library(magrittr)
 library(magick)
 ```
 
-To do load the image we can use the following command
+To load the image we can use the following command
 
-```{r load-image}
-rstudio_icon <- image_read("https://www.rstudio.com/wp-content/uploads/2018/03/community-favicon-512.png")
+```{r load-image, fig.align="center"}
+community_icon_orig <- image_read("https://www.rstudio.com/wp-content/uploads/2018/03/community-favicon-512.png")
 
-rstudio_icon
+community_icon_orig
 ```
 
-Right now the image looks great, but we want our icon to be grayscaled to match the other icons on the social link. We can do this with a combo of `image_channel` (to convert to grayscale), `image_contrast` (to brighten the contrast between gray and white), and `image_transparent` (to remove the background created by `image_channel`)
+Right now the image looks great, but we want our icon to be grayscaled to match the other icons on the social link. We can do this with just a little `magick`! First, we will creaete a background icon that is simply the RStudio Community icon shape in all black. This is because the inner portion of the other social icons is a black color (`#191818` to be exact) and the community icon is white when we first load it. Using `image_composite`, in conjunction with `image_channel` (to convert to grayscale) and `image_transparent` (to remove the square background created by `image_channel`) we can superimpose the black background over the white portions of the icon. You can create the background for the icon like this:
+
+
+```{r icon-background, fig.align="center"}
+icon_background <- community_icon_orig %>% 
+  image_channel(channel = "Gray") %>% 
+  image_transparent(color = "black") %>% 
+  image_composite(image_blank(512, 512, "#191818"), "In")
+
+icon_background
+```
+
+Now that we have the background to use it in our `image_composite` function to create our final commmunity icon with a gray outer portion and a   
+
+```{r manipulate-image, fig.align = "center"}
+community_icon <- community_icon_orig %>% 
+  image_channel(channel = "Gray") %>% 
+  image_transparent(color = "black") %>% 
+  image_composite(icon_background, "Subtract") 
+
+community_icon
+```

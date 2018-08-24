@@ -29,20 +29,20 @@ This is the parent `<div>` that contains the menu and the content area.
     padding-left: 0;
 }
     #layout.active #menu {
-        left: 150px;
-        width: 150px;
+        left: 175px;
+        width: 175px;
     }
 
     #layout.active .menu-link {
-        left: 150px;
+        left: 175px;
     }
 /*
 The content `<div>` is where all your content goes.
 */
 .content {
     margin: 0 auto;
-    padding: 0 2em;
-    max-width: 800px;
+    padding: 0 2.5em;
+    max-width: 1200px;
     margin-bottom: 50px;
     line-height: 1.6em;
 }
@@ -51,7 +51,7 @@ The content `<div>` is where all your content goes.
      margin: 0;
      color: #333;
      text-align: center;
-     padding: 2.5em 2em 0;
+     padding: 2.5em 2.5em 0;
      border-bottom: 1px solid #eee;
  }
     .header h1 {
@@ -80,7 +80,7 @@ appears on the left side of the page.
 */
 
 #menu {
-    margin-left: -150px; /* "#menu" width */
+    margin-left: -175px; /* "#menu" width */
     width: 175px;
     position: fixed;
     top: 0;
@@ -146,6 +146,13 @@ appears on the left side of the page.
         color: #fff;
         margin: 0;
     }
+    
+    #community-icon {
+      padding-left:3px;
+      margin-right:0.4em;
+    }
+    
+    
 
 /* -- Dynamic Button For Responsive Menu -------------------------------------*/
 
@@ -211,7 +218,7 @@ Hides the menu at `48em`, but modify this based on your app's needs.
 
     .header,
     .content {
-        padding-left: 2em;
+        padding-left: 2.5em;
         padding-right: 2em;
     }
 
@@ -220,17 +227,17 @@ Hides the menu at `48em`, but modify this based on your app's needs.
         left: 0;
     }
     #menu {
-        left: 150px;
+        left: 175px;
     }
 
     .menu-link {
         position: fixed;
-        left: 150px;
+        left: 175px;
         display: none;
     }
 
     #layout.active .menu-link {
-        left: 150px;
+        left: 175px;
     }
 }
 
