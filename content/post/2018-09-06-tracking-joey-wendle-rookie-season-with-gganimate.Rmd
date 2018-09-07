@@ -46,6 +46,7 @@ Before we start, let's load the R packages that we will use.
 
 ```{r load-packages}
 library(tidyverse)
+# devtools::install_github("BillPetti/baseballr")
 library(baseballr)
 # devtools::install_github("thomasp85/gganimate")
 library(gganimate)
@@ -56,20 +57,40 @@ library(fuzzyjoin) # for position graph
 # Getting the data
 There are several sources of MLB data available on the internet, and the [`baseballr`](https://github.com/BillPetti/baseballr) package by [Bill Petti](https://billpetti.github.io/) makes getting this data super easy. The sources of data that I will use in this post is from the [Baseball Savant](http://baseballsavant.mlb.com) website for batting data and [Fan Graphs](https://www.FanGraphs.com) . These sites both provide game by game data for any player in the league for any season. The Baseball Savant site provides pitch by pitch data about each of Joey's at-bats and the Fan Graphs site provides game by game stats. 
 
-`baseballr`
+`baseballr` provides different functions for the different data sources, but first we will have to get Joey's player id from these sites. We can use the `playerid_lookup` function to find it. 
+
+```{r joey-id}
+playerid_lookup("Wendle", "Joey") %>% glimpse()
+```
+
+Now we can look up both the Fan Graphs and Baseball Savant data. From the above we can see that his Fan Graphs id is "13853". 
 
 
+```{r joey-fg}
+joey_fg <- baseballr::batter_game_logs_fg("13853", year = 2018)
+```
+
+```{r show-fg-data}
+joey_fg %>% as_tibble()
+```
+
+We can do the same with the Baseball Savant data using the cooresponding player id - "621563"
+
+```{r joey-savant}
+joey_bsvnt <- scrape_statcast_savant_batter(start_date = "2018-03-29", end_date = Sys.Date(), batterid = "621563")
+
+```
+```{r show-joey-savant}
+joey_bsvnt %>% as_tibble()
+```
 
 
-```{r}
-joey_savant <- scrape_statcast_savant_batter(start_date = "2018-03-29", end_date = Sys.Date(), batterid = "621563")
+# Fielding Positions
+Joey started the season sharing second base duties and was not used in many other positions. However, as the season has progressed, the Rays have given him oppurtunites at several other positions and Joey has stepped up every time. I mean, just look at those web gems in the tweet at the beginning of this post! 
 
-joey <- baseballr::batter_game_logs_fg("13853", year = 2018)
+As a first stab at `gganimate`, let's take a look at where Joey has played each game with the help of `baseballr`'s `ggspraychart` function. First, we can define coordinates (relative to `ggspraycharts` field definition) for each of the positions that he has played. 
 
-gleyber <- scrape_statcast_savant_batter(start_date = "2018-03-29", end_date = Sys.Date(), batterid = "650402")
-andujar <- scrape_statcast_savant_batter(start_date = "2018-03-29", end_date = Sys.Date(), batterid = "609280")
-  
-
+```{r define-pos-coords}
 position_loc <- tribble(
   ~position, ~x, ~y, 
   "2B", 145, -145,
@@ -78,10 +99,22 @@ position_loc <- tribble(
   "LF", 80, -100,
   "RF", 176, -100
 )
-  
-joey %>% 
+
+```
+
+Since Joey has played multiple positions in single games, a simple left join os not entirely appropriate. Using the [`fuzzyjoin`](https://github.com/dgrtwo/fuzzyjoin) package, we can match the position coordinates with the positions that are defined in the `joey_fg` dataset by regex. 
+
+```{r combine-joey-position}
+joey_position <- joey_fg %>% 
   fuzzyjoin::regex_left_join(position_loc, by = c("Pos" = "position")) %>% 
-  mutate(Date = lubridate::ymd(Date)) %>% 
+  mutate(Date = lubridate::ymd(Date))
+
+```
+
+Now, using the `ggspraychart` and the `transition_time` function, we can see how his position has changed with each day. 
+
+```{r position-chart}
+position_chart <- joey_position %>% 
   ggspraychart(x_value = "x", y_value = "y", fill_value = "position") + 
   scale_fill_manual(values = c("2B" = "red", "3B" = "blue",
                                "SS" = "green", "LF" = "yellow", 
@@ -95,148 +128,6 @@ joey %>%
     legend.text = element_text(size = 12, face = "bold")
   )
 
-savant_daily <- function(data, team){
-  output <- data %>% 
-    filter(!is.na(events), events != "caught_stealing_2b") %>% 
-    mutate(
-      rbi = if_else(home_team == team, 
-                    post_home_score - home_score,
-                    post_away_score - away_score),
-      is_ab = if_else(
-        events %in% c("strikeout", "field_out", "single", "double", "force_out", 
-                      "triple", "home_run", "double_play", "field_error", "grounded_into_double_play",
-                      "strikeout_double_play", "fielders_choice_out"),
-        TRUE,
-        FALSE
-      ),
-      is_hit = if_else(
-        events %in% c("single", "double", "triple", "home_run"), TRUE, FALSE
-      ),
-      bases = case_when(
-        events == "single" ~ 1,
-        events == "double" ~ 2,
-        events == "triple" ~ 3,
-        events == "home_run" ~ 4,
-        TRUE ~ 0
-      ),
-      event_custom = case_when(
-        events %in% c("single", "double", "triple", "home_run") ~ events, 
-        str_detect(events, "sac") ~ "sacrifice",
-        events %in% c("walk", "hit_by_pitch") ~ NA_character_,
-        events == "field_error" ~ "error",
-        TRUE ~ "out"
-      )
-    ) %>% 
-    group_by(game_date) %>% 
-    summarize(
-      pa = length(unique(at_bat_number)),
-      ab = sum(is_ab),
-      hits = sum(is_hit),
-      doubles = sum(events == "double"),
-      triples = sum(events == "triples"),
-      home_runs = sum(events == "home_run"),
-      rbi = sum(rbi),
-      bb = sum(events == "walk"),
-      hbp = sum(events == "hit_by_pitch"),
-      so = sum(events %in% c("strikeout", "strikeout_double_play")),
-      bases = sum(bases)
-    ) %>% 
-    arrange(game_date) %>% 
-    mutate(
-      ba = round(hits/ab, 3),
-      obp = round((hits + bb + hbp)/(ab + bb + hbp), 3),
-      slg = round(bases/ab, 3),
-      ops = obp + slg,
-      hits_to_date = cumsum(hits),
-      rbis_to_date = cumsum(rbi),
-      bb_to_date = cumsum(bb),
-      hbp_to_date = cumsum(hbp),
-      ab_to_date = cumsum(ab),
-      bases_to_date = cumsum(bases),
-      ba_to_date = round(hits_to_date/ab_to_date, 3),
-      obp_to_date = round(
-        (hits_to_date + bb_to_date + hbp_to_date)/(ab_to_date + bb_to_date + hbp_to_date), 3
-      ),
-      slg_to_date = round(bases_to_date/ab_to_date, 3),
-      ops_to_date = obp_to_date + slg_to_date
-    )
-  
-  return(output)
-}
-
-joey_savant_daily <- joey_savant %>% 
-  savant_daily("TB")
-
-
-joey_savant_daily %>% 
-  ggplot(aes(game_date, ba_to_date)) + 
-  geom_line() + 
-  theme_bw() + 
-  transition_reveal(id = game_date, along = game_date) + 
-  geom_text()
-
-joey_savant %>% 
-  filter(events %in% c("single", "double", "triple", "home_run")) %>% 
-  ggspraychart(fill_value = "events", fill_palette = c("single"="#A2C8EC", "double"="#006BA4", 
-                                                       "triple"="#FF940E", "home_run"="#C85200")) + 
-  scale_fill_manual(values = c("single"="#A2C8EC", "double"="#006BA4", 
-                               "triple"="#FF940E", "home_run"="#C85200"),
-                    labels = c("single", "double", "triple", "home run")) + 
-  labs(title = "Joey Wendle 2018 hits to date: {frame_time}",
-       caption = "Data source: baseballsavant.com\nBuilt with the baseballr package\n") + 
-  transition_reveal(game_date, game_date) + 
-  theme(
-    legend.title = element_blank(),
-    plot.title = element_text(size = 14),
-    plot.caption = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 12, face = "bold")
-  )
-
-
-
-gleyber_daily <- gleyber %>% 
-  savant_daily()
-
-andujar_daily <- andujar %>% 
-  savant_daily()
-
-combined_daily <- joey_savant_daily %>% 
-  mutate(player = "Joey Wendle") %>% 
-  bind_rows(
-    gleyber_daily %>% 
-      mutate(player = "Gleyber Torres"),
-    andujar_daily %>% 
-      mutate(player = "Miguel Andujar")
-  )
-
-
-ba_comparison <- combined_daily %>% 
-  ggplot(aes(game_date, ba_to_date, color = player)) + 
-  geom_step(size = 1) +
-  labs(title = "Batting Average by date: {frame_time}") + 
-  theme_bw() + 
-  transition_reveal(id = player, along = game_date)
-
-gganimate::animate(ba_comparison, width = 1000, height = 800)
-
-
-stats_comparison <- combined_daily %>% 
-  group_by(player) %>% 
-  mutate(doubles_to_date = cumsum(doubles),
-         # triples_to_date = cumsum(triples),
-         homers_to_date = cumsum(home_runs)) %>%
-  select(player, game_date, contains("to_date")) %>% 
-  gather(key = "metric", value = "value", contains("to_date")) %>% 
-  ggplot(aes(game_date, value, color = player)) + 
-  facet_wrap(vars(metric), scales = "free_y") + 
-  geom_path() + 
-  theme_bw() + 
-  labs(title = "2018 player stats by day: {frame_time}") +
-  transition_reveal(player, game_date)
-
-animate(stats_comparison, width = 1000, height = 800)
-
-
-
+animate(position_chart, width = 800, height = 800)
 
 ```
