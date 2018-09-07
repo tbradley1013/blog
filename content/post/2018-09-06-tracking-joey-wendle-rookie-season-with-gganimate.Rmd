@@ -27,19 +27,22 @@ knitr::opts_chunk$set(
 
 # Introduction
 This past weekend I got the chance to go to the Tampa Bay Rays vs Cleveland Indians game. This game was a ton of fun, made even more exciting for me - and by the end of the game, the people in my section - because my brother-in-law's brother (does that make him my brother-in-law too? No one ever knows for sure...), Joey Wendle, plays for the Rays! In case you haven't been paying attention, Joey has been having a ***MASSIVE*** rookie season. Just take a look at some of the tweets from the Ray's organization in the last few days. 
+
+<center>
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">The AL&#39;s top-hitting rookie is on a record pace.<a href="https://twitter.com/hashtag/RaysUp?src=hash&amp;ref_src=twsrc%5Etfw">#RaysUp</a> <a href="https://t.co/2oo88IXS2f">pic.twitter.com/2oo88IXS2f</a></p>&mdash; Tampa Bay Rays (@RaysBaseball) <a href="https://twitter.com/RaysBaseball/status/1037098037120823297?ref_src=twsrc%5Etfw">September 4, 2018</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">How many ways can one man impact a game?<a href="https://twitter.com/hashtag/RaysUp?src=hash&amp;ref_src=twsrc%5Etfw">#RaysUp</a> <a href="https://t.co/iE3izrtc70">pic.twitter.com/iE3izrtc70</a></p>&mdash; Tampa Bay Rays (@RaysBaseball) <a href="https://twitter.com/RaysBaseball/status/1036398948502695937?ref_src=twsrc%5Etfw">September 2, 2018</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-
+</center>
 
 As you can see, the man has been getting it done at the plate and in the field. This has led some to call for his inclusion in the AL Rookie of the Year conversation. 
 
+<center>
 <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr"><a href="https://twitter.com/hashtag/Rays?src=hash&amp;ref_src=twsrc%5Etfw">#Rays</a> Joey Wendle put on a show on Sunday and it’s time to start talking about him as a legit AL Rookie of the Year contender: <a href="https://t.co/G9sFvLLeLq">https://t.co/G9sFvLLeLq</a></p>&mdash; Juan Toribio (@juanctoribio) <a href="https://twitter.com/juanctoribio/status/1036449226732064773?ref_src=twsrc%5Etfw">September 3, 2018</a></blockquote>
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-
+</center>
 
 I have been looking for a good excuse to play around with [Thomas Pedersen's](https://www.data-imaginist.com/) [`gganimate`](https://github.com/thomasp85/gganimate) package, and what better way then by taking a look at Joey's rookie season. 
 
@@ -252,7 +255,7 @@ Let's take a look at how Joey's batting average has changed over time. We can us
 ```{r joey-rbi, eval = FALSE}
 joey_rbi <- joey_bsvnt_daily %>% 
   ggplot(aes(game_date, ba_to_date)) + 
-  geom_step(line = 2) + 
+  geom_step(size = 1.5) + 
   theme_bw() + 
   labs(
     y = "Batting Average",
@@ -290,7 +293,7 @@ multi_stats <- joey_bsvnt_daily %>%
     metric == "obp_to_date" ~ "On-base Percentage"
   )) %>% 
   ggplot(aes(game_date, value)) + 
-  geom_step(size = 2) + 
+  geom_step(size = 1.5) + 
   facet_wrap(vars(metric), scales = "free_y", ncol = 1) + 
   theme_bw() + 
   scale_x_date(date_breaks = "2 week", date_labels = "%B %d, %Y") + 

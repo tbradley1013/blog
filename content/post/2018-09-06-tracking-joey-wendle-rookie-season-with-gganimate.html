@@ -90,7 +90,7 @@ library(fuzzyjoin) # for position graph</code></pre>
 ## # ... with 109 more rows, and 11 more variables: SB &lt;chr&gt;, CS &lt;chr&gt;,
 ## #   BB_perc &lt;dbl&gt;, K_perc &lt;dbl&gt;, ISO &lt;chr&gt;, BABIP &lt;chr&gt;, AVG &lt;chr&gt;,
 ## #   OBP &lt;chr&gt;, SLG &lt;chr&gt;, wOBA &lt;chr&gt;, wRC_plus &lt;chr&gt;</code></pre>
-<p>We can do the same with the Baseball Savant data using the cooresponding player id - “621563”</p>
+<p>We can do the same with the Baseball Savant data using the corresponding player id - “621563”</p>
 <pre class="r"><code>joey_bsvnt &lt;- scrape_statcast_savant_batter(start_date = &quot;2018-03-29&quot;, end_date = Sys.Date(), batterid = &quot;621563&quot;)</code></pre>
 <pre class="r"><code>joey_bsvnt %&gt;% as_tibble()</code></pre>
 <pre><code>## # A tibble: 1,687 x 90
@@ -228,7 +228,7 @@ joey_bsvnt_daily %&gt;% glimpse()</code></pre>
 </div>
 <div id="fielding-positions" class="section level1">
 <h1>Fielding Positions</h1>
-<p>Joey started the season sharing second base duties and was not used in many other positions. However, as the season has progressed, the Rays have given him oppurtunites at several other positions and Joey has stepped up every time. I mean, just look at those web gems in the tweet at the beginning of this post! Seriously, go watch them again, I will wait…</p>
+<p>Joey started the season sharing second base duties and was not used in many other positions. However, as the season has progressed, the Rays have given him opportunities at several other positions and Joey has stepped up every time. I mean, just look at those web gems in the tweet at the beginning of this post! Seriously, go watch them again, I will wait…</p>
 <p>As a first stab at <code>gganimate</code>, let’s take a look at where Joey has played each game with the help of <code>baseballr</code>’s <code>ggspraychart</code> function. First, we can define coordinates (relative to <code>ggspraycharts</code> field definition) for each of the positions that he has played.</p>
 <pre class="r"><code>position_loc &lt;- tribble(
   ~position, ~x, ~y, 
@@ -238,7 +238,7 @@ joey_bsvnt_daily %&gt;% glimpse()</code></pre>
   &quot;LF&quot;, 80, -100,
   &quot;RF&quot;, 176, -100
 )</code></pre>
-<p>Since Joey has played multiple positions in single games, a simple left join os not entirely appropriate. Using the <a href="https://github.com/dgrtwo/fuzzyjoin"><code>fuzzyjoin</code></a> package, we can match the position coordinates with the positions that are defined in the <code>joey_fg</code> dataset by regex.</p>
+<p>Since Joey has played multiple positions in single games, a simple left join is not entirely appropriate. Using the <a href="https://github.com/dgrtwo/fuzzyjoin"><code>fuzzyjoin</code></a> package, we can match the position coordinates with the positions that are defined in the <code>joey_fg</code> data set by regex.</p>
 <pre class="r"><code>joey_position &lt;- joey_fg %&gt;% 
   fuzzyjoin::regex_left_join(position_loc, by = c(&quot;Pos&quot; = &quot;position&quot;)) %&gt;% 
   mutate(Date = lubridate::ymd(Date))</code></pre>
@@ -267,7 +267,7 @@ animate(position_chart, width = 800, height = 800)</code></pre>
 </div>
 <div id="batting" class="section level1">
 <h1>Batting</h1>
-<p>Now let’s use the <code>ggspraychart</code> to see how Joey’s hits have accumulated over the course of the season and where he tends to hit the ball. For this, we will use the raw baseball savant dataset <code>joey_bsvnt</code> and use the function <code>transition_reveal</code>. This function allows for data to be added over a range rather than only showing the data for a specific date.</p>
+<p>Now let’s use the <code>ggspraychart</code> to see how Joey’s hits have accumulated over the course of the season and where he tends to hit the ball. For this, we will use the raw baseball savant data set <code>joey_bsvnt</code> and use the function <code>transition_reveal</code>. This function allows for data to be added over a range rather than only showing the data for a specific date.</p>
 <pre class="r"><code>joey_spray &lt;- joey_bsvnt %&gt;% 
   filter(events %in% c(&quot;single&quot;, &quot;double&quot;, &quot;triple&quot;, &quot;home_run&quot;)) %&gt;% 
   mutate(events = factor(events, levels = c(&quot;single&quot;, &quot;double&quot;, &quot;triple&quot;, &quot;home_run&quot;),
