@@ -3,6 +3,7 @@ title: Tracking Joey Wendle's rookie season with gganimate
 author: Tyler Bradley
 date: '2018-09-06'
 slug: tracking-joey-wendle-rookie-season-with-gganimate
+twitterImg: /images/joey-rookie/joey-post-image.jpg
 categories:
   - R
 tags:
@@ -55,7 +56,7 @@ library(fuzzyjoin) # for position graph
 ```
 
 # Getting the data
-There are several sources of MLB data available on the internet, and the [`baseballr`](https://github.com/BillPetti/baseballr) package by [Bill Petti](https://billpetti.github.io/) makes getting this data super easy. The sources of data that I will use in this post is from the [Baseball Savant](http://baseballsavant.mlb.com) website for batting data and [Fan Graphs](https://www.FanGraphs.com) . These sites both provide game by game data for any player in the league for any season. The Baseball Savant site provides pitch by pitch data about each of Joey's at-bats and the Fan Graphs site provides game by game stats. 
+There are several sources of MLB data available on the internet, and the [`baseballr`](https://github.com/BillPetti/baseballr) package by [Bill Petti](https://billpetti.github.io/) makes getting this data super easy. The sources of data that I will use in this post are from the [Baseball Savant](http://baseballsavant.mlb.com) website for batting data and [Fan Graphs](https://www.FanGraphs.com) for fielding position. These sites both provide game by game data for any player in the league for any season. The Baseball Savant site provides pitch by pitch data about each of Joey's at-bats and the Fan Graphs site provides game by game stats. 
 
 `baseballr` provides different functions for the different data sources, but first we will have to get Joey's player id from these sites. We can use the `playerid_lookup` function to find it. 
 
@@ -74,7 +75,7 @@ joey_fg <- baseballr::batter_game_logs_fg("13853", year = 2018)
 joey_fg %>% as_tibble()
 ```
 
-We can do the same with the Baseball Savant data using the cooresponding player id - "621563"
+We can do the same with the Baseball Savant data using the corresponding player id - "621563"
 
 ```{r joey-savant}
 joey_bsvnt <- scrape_statcast_savant_batter(start_date = "2018-03-29", end_date = Sys.Date(), batterid = "621563")
@@ -84,9 +85,84 @@ joey_bsvnt <- scrape_statcast_savant_batter(start_date = "2018-03-29", end_date 
 joey_bsvnt %>% as_tibble()
 ```
 
+While the baseball savant data has a ton of information, it does not have stats per game or cumulative stats for the season. However, using the data that we have, these things can be calculated easily! To do this, we will define a custom function to calculate a few standard sabermetrics (i.e. batting average, slugging, on base percentage, etc.). 
+
+```{r custom-func}
+savant_daily <- function(data){
+  output <- data %>% 
+    filter(!is.na(events), events != "caught_stealing_2b") %>% 
+    mutate(
+      is_ab = if_else(
+        events %in% c("strikeout", "field_out", "single", "double", "force_out", 
+                      "triple", "home_run", "double_play", "field_error", "grounded_into_double_play",
+                      "strikeout_double_play", "fielders_choice_out"),
+        TRUE,
+        FALSE
+      ),
+      is_hit = if_else(
+        events %in% c("single", "double", "triple", "home_run"), TRUE, FALSE
+      ),
+      bases = case_when(
+        events == "single" ~ 1,
+        events == "double" ~ 2,
+        events == "triple" ~ 3,
+        events == "home_run" ~ 4,
+        TRUE ~ 0
+      ),
+      event_custom = case_when(
+        events %in% c("single", "double", "triple", "home_run") ~ events, 
+        str_detect(events, "sac") ~ "sacrifice",
+        events %in% c("walk", "hit_by_pitch") ~ NA_character_,
+        events == "field_error" ~ "error",
+        TRUE ~ "out"
+      )
+    ) %>% 
+    group_by(game_date) %>% 
+    summarize(
+      pa = length(unique(at_bat_number)),
+      ab = sum(is_ab),
+      hits = sum(is_hit),
+      doubles = sum(events == "double"),
+      triples = sum(events == "triples"),
+      home_runs = sum(events == "home_run"),
+      bb = sum(events == "walk"),
+      hbp = sum(events == "hit_by_pitch"),
+      so = sum(events %in% c("strikeout", "strikeout_double_play")),
+      bases = sum(bases)
+    ) %>% 
+    arrange(game_date) %>% 
+    mutate(
+      ba = round(hits/ab, 3),
+      obp = round((hits + bb + hbp)/(ab + bb + hbp), 3),
+      slg = round(bases/ab, 3),
+      ops = obp + slg,
+      hits_to_date = cumsum(hits),
+      bb_to_date = cumsum(bb),
+      hbp_to_date = cumsum(hbp),
+      ab_to_date = cumsum(ab),
+      bases_to_date = cumsum(bases),
+      ba_to_date = round(hits_to_date/ab_to_date, 3),
+      obp_to_date = round(
+        (hits_to_date + bb_to_date + hbp_to_date)/(ab_to_date + bb_to_date + hbp_to_date), 3
+      ),
+      slg_to_date = round(bases_to_date/ab_to_date, 3),
+      ops_to_date = obp_to_date + slg_to_date
+    )
+  
+  return(output)
+}
+
+
+```
+
+```{r}
+joey_bsvnt_daily <- savant_daily(joey_bsvnt)
+
+joey_bsvnt_daily %>% glimpse()
+```
 
 # Fielding Positions
-Joey started the season sharing second base duties and was not used in many other positions. However, as the season has progressed, the Rays have given him oppurtunites at several other positions and Joey has stepped up every time. I mean, just look at those web gems in the tweet at the beginning of this post! 
+Joey started the season sharing second base duties and was not used in many other positions. However, as the season has progressed, the Rays have given him opportunities at several other positions and Joey has stepped up every time. I mean, just look at those web gems in the tweet at the beginning of this post! Seriously, go watch them again, I will wait...
 
 As a first stab at `gganimate`, let's take a look at where Joey has played each game with the help of `baseballr`'s `ggspraychart` function. First, we can define coordinates (relative to `ggspraycharts` field definition) for each of the positions that he has played. 
 
@@ -102,7 +178,7 @@ position_loc <- tribble(
 
 ```
 
-Since Joey has played multiple positions in single games, a simple left join os not entirely appropriate. Using the [`fuzzyjoin`](https://github.com/dgrtwo/fuzzyjoin) package, we can match the position coordinates with the positions that are defined in the `joey_fg` dataset by regex. 
+Since Joey has played multiple positions in single games, a simple left join is not entirely appropriate. Using the [`fuzzyjoin`](https://github.com/dgrtwo/fuzzyjoin) package, we can match the position coordinates with the positions that are defined in the `joey_fg` data set by regex. 
 
 ```{r combine-joey-position}
 joey_position <- joey_fg %>% 
@@ -113,13 +189,15 @@ joey_position <- joey_fg %>%
 
 Now, using the `ggspraychart` and the `transition_time` function, we can see how his position has changed with each day. 
 
-```{r position-chart}
+```{r position-chart, eval = FALSE}
 position_chart <- joey_position %>% 
+  filter(!is.na(position)) %>% 
   ggspraychart(x_value = "x", y_value = "y", fill_value = "position") + 
   scale_fill_manual(values = c("2B" = "red", "3B" = "blue",
                                "SS" = "green", "LF" = "yellow", 
                                "RF" = "black"), na.translate = FALSE) + 
-  labs(title = "Joey Wendle 2018 position by game:{frame_time}") + 
+  labs(title = "Joey Wendle 2018 position by game:{frame_time}",
+       caption = "Data source: fangraphs.com\nBuilt with the baseballr package\n") + 
   transition_time(Date) + 
   theme(
     legend.title = element_blank(),
@@ -131,3 +209,112 @@ position_chart <- joey_position %>%
 animate(position_chart, width = 800, height = 800)
 
 ```
+
+<center>
+![](/images/joey-rookie/position-chart.gif)
+</center>
+
+As this animation shows, he has been moved around the field much more towards the end of the year!
+
+# Batting 
+Now let's use the `ggspraychart` to see how Joey's hits have accumulated over the course of the season and where he tends to hit the ball. For this, we will use the raw baseball savant data set `joey_bsvnt` and use the function `transition_reveal`. This function allows for data to be added over a range rather than only showing the data for a specific date. 
+
+```{r joey-spray-chart, eval = FALSE}
+joey_spray <- joey_bsvnt %>% 
+  filter(events %in% c("single", "double", "triple", "home_run")) %>% 
+  mutate(events = factor(events, levels = c("single", "double", "triple", "home_run"),
+                         labels = c("Single", "Double", "Triple", "Home Run"))) %>% 
+  ggspraychart(fill_value = "events", 
+               fill_palette = c("Single"="#A2C8EC", "Double"="#006BA4", 
+                                "Triple"="#FF940E", "Home Run"="#C85200")) + 
+  labs(title = "Joey Wendle 2018 hits to date: {frame_time}",
+       caption = "Data source: baseballsavant.com\nBuilt with the baseballr package\n") + 
+  transition_reveal(game_date, game_date) + 
+  theme(
+    legend.title = element_blank(),
+    plot.title = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 12, face = "bold")
+  )
+
+
+animate(joey_spray, width = 800, height = 800)
+```
+
+<center>
+![](/images/joey-rookie/spray-anim.gif)
+</center>
+
+From this animation, Joey seems to hit most of his home runs to right field, but other than that he seems to spread his hits all around the field. 
+
+Let's take a look at how Joey's batting average has changed over time. We can use the daily statistics we calculated earlier to see how it changes over time using the `transition_reveal` function. 
+
+```{r joey-rbi, eval = FALSE}
+joey_rbi <- joey_bsvnt_daily %>% 
+  ggplot(aes(game_date, ba_to_date)) + 
+  geom_step(line = 2) + 
+  theme_bw() + 
+  labs(
+    y = "Batting Average",
+    title = "Joey Wendle's batting average during the 2018 season",
+    caption = "Data source: baseballsavant.com\n"
+  ) + 
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%B %d, %Y") + 
+  scale_y_continuous(breaks = seq(0, 0.35, 0.05)) + 
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.caption = element_text(size = 10, face = "bold"),
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, face = "bold"),
+    axis.text.y = element_text(face = "bold")
+  ) + 
+  transition_reveal(id = game_date, along = game_date) 
+
+
+animate(joey_rbi, width = 800, height = 600)
+```
+
+<center>
+![](/images/joey-rookie/rbi-anim.gif)
+</center>
+
+As we can see, Joey has stayed fairly consistent between 0.275 and 0.300 and has only been improving since the all-star break. Using the same functionality, we can look at multiple stats all at once by simply faceting the graphs. Here we can see how his batting average, slugging percentage and on-base percentage have changed over the course of the season. 
+
+```{r multiple-plot, eval = FALSE}
+multi_stats <- joey_bsvnt_daily %>% 
+  select(game_date, ba_to_date, slg_to_date, obp_to_date) %>% 
+  gather(key = "metric", value = "value", -game_date) %>% 
+  mutate(metric = case_when(
+    metric == "ba_to_date" ~ "Batting Average",
+    metric == "slg_to_date" ~ "Slugging",
+    metric == "obp_to_date" ~ "On-base Percentage"
+  )) %>% 
+  ggplot(aes(game_date, value)) + 
+  geom_step(size = 2) + 
+  facet_wrap(vars(metric), scales = "free_y", ncol = 1) + 
+  theme_bw() + 
+  scale_x_date(date_breaks = "2 week", date_labels = "%B %d, %Y") + 
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.caption = element_text(size = 10, face = "bold"),
+    axis.title = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, face = "bold"),
+    axis.text.y = element_text(face = "bold")
+  ) + 
+  labs(
+   title = "Joey Wendle's batting average, slugging, and on-base percentage, respectively",
+   caption = "Data source: baseballsavant.com\n"
+  ) + 
+  transition_reveal(game_date, game_date)
+
+animate(multi_stats, width = 800, height = 1000)
+```
+
+<center>
+![](/images/joey-rookie/multi-stats.gif)
+</center>
+
+# Conclusion
+Joey is having a breakout year and the `gganimate` package gives us a cool way of viewing his progress over the course of the season. I hope you enjoyed the examples and I hope you root for Joey to finish off the year strong! 
+
+Please let me know what you think!

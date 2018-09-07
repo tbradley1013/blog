@@ -1,0 +1,356 @@
+---
+title: Tracking Joey Wendle's rookie season with gganimate
+author: Tyler Bradley
+date: '2018-09-06'
+slug: tracking-joey-wendle-rookie-season-with-gganimate
+twitterImg: /images/joey-rookie/joey-post-image.jpg
+categories:
+  - R
+tags:
+  - rstats
+  - tidyverse
+  - mlb
+  - gganimate
+  - baseballr
+description: ''
+topics: []
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+This past weekend I got the chance to go to the Tampa Bay Rays vs Cleveland Indians game. This game was a ton of fun, made even more exciting for me - and by the end of the game, the people in my section - because my brother-in-law’s brother (does that make him my brother-in-law too? No one ever knows for sure…), Joey Wendle, plays for the Rays! In case you haven’t been paying attention, Joey has been having a <strong><em>MASSIVE</em></strong> rookie season. Just take a look at some of the tweets from the Ray’s organization in the last few days.
+<blockquote class="twitter-tweet" data-lang="en">
+<p lang="en" dir="ltr">
+The AL's top-hitting rookie is on a record pace.<a href="https://twitter.com/hashtag/RaysUp?src=hash&amp;ref_src=twsrc%5Etfw">#RaysUp</a> <a href="https://t.co/2oo88IXS2f">pic.twitter.com/2oo88IXS2f</a>
+</p>
+— Tampa Bay Rays (<span class="citation">@RaysBaseball</span>) <a href="https://twitter.com/RaysBaseball/status/1037098037120823297?ref_src=twsrc%5Etfw">September 4, 2018</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<blockquote class="twitter-tweet" data-lang="en">
+<p lang="en" dir="ltr">
+How many ways can one man impact a game?<a href="https://twitter.com/hashtag/RaysUp?src=hash&amp;ref_src=twsrc%5Etfw">#RaysUp</a> <a href="https://t.co/iE3izrtc70">pic.twitter.com/iE3izrtc70</a>
+</p>
+— Tampa Bay Rays (<span class="citation">@RaysBaseball</span>) <a href="https://twitter.com/RaysBaseball/status/1036398948502695937?ref_src=twsrc%5Etfw">September 2, 2018</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>As you can see, the man has been getting it done at the plate and in the field. This has led some to call for his inclusion in the AL Rookie of the Year conversation.</p>
+<blockquote class="twitter-tweet" data-lang="en">
+<p lang="en" dir="ltr">
+<a href="https://twitter.com/hashtag/Rays?src=hash&amp;ref_src=twsrc%5Etfw">#Rays</a> Joey Wendle put on a show on Sunday and it’s time to start talking about him as a legit AL Rookie of the Year contender: <a href="https://t.co/G9sFvLLeLq">https://t.co/G9sFvLLeLq</a>
+</p>
+— Juan Toribio (<span class="citation">@juanctoribio</span>) <a href="https://twitter.com/juanctoribio/status/1036449226732064773?ref_src=twsrc%5Etfw">September 3, 2018</a>
+</blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>I have been looking for a good excuse to play around with <a href="https://www.data-imaginist.com/">Thomas Pedersen’s</a> <a href="https://github.com/thomasp85/gganimate"><code>gganimate</code></a> package, and what better way then by taking a look at Joey’s rookie season.</p>
+<p>Before we start, let’s load the R packages that we will use.</p>
+<pre class="r"><code>library(tidyverse)
+# devtools::install_github(&quot;BillPetti/baseballr&quot;)
+library(baseballr)
+# devtools::install_github(&quot;thomasp85/gganimate&quot;)
+library(gganimate)
+library(lubridate)
+library(fuzzyjoin) # for position graph</code></pre>
+</div>
+<div id="getting-the-data" class="section level1">
+<h1>Getting the data</h1>
+<p>There are several sources of MLB data available on the internet, and the <a href="https://github.com/BillPetti/baseballr"><code>baseballr</code></a> package by <a href="https://billpetti.github.io/">Bill Petti</a> makes getting this data super easy. The sources of data that I will use in this post are from the <a href="http://baseballsavant.mlb.com">Baseball Savant</a> website for batting data and <a href="https://www.FanGraphs.com">Fan Graphs</a> for fielding position. These sites both provide game by game data for any player in the league for any season. The Baseball Savant site provides pitch by pitch data about each of Joey’s at-bats and the Fan Graphs site provides game by game stats.</p>
+<p><code>baseballr</code> provides different functions for the different data sources, but first we will have to get Joey’s player id from these sites. We can use the <code>playerid_lookup</code> function to find it.</p>
+<pre class="r"><code>playerid_lookup(&quot;Wendle&quot;, &quot;Joey&quot;) %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 1
+## Variables: 11
+## $ first_name       &lt;chr&gt; &quot;Joey&quot;
+## $ last_name        &lt;chr&gt; &quot;Wendle&quot;
+## $ given_name       &lt;chr&gt; &quot;Joseph Patrick&quot;
+## $ name_suffix      &lt;chr&gt; NA
+## $ nick_name        &lt;chr&gt; NA
+## $ birth_year       &lt;int&gt; 1990
+## $ mlb_played_first &lt;int&gt; 2016
+## $ mlbam_id         &lt;int&gt; 621563
+## $ retrosheet_id    &lt;chr&gt; &quot;wendj002&quot;
+## $ bbref_id         &lt;chr&gt; &quot;wendljo01&quot;
+## $ fangraphs_id     &lt;int&gt; 13853</code></pre>
+<p>Now we can look up both the Fan Graphs and Baseball Savant data. From the above we can see that his Fan Graphs id is “13853”.</p>
+<pre class="r"><code>joey_fg &lt;- baseballr::batter_game_logs_fg(&quot;13853&quot;, year = 2018)</code></pre>
+<pre class="r"><code>joey_fg %&gt;% as_tibble()</code></pre>
+<pre><code>## # A tibble: 119 x 23
+##    Date  Team  Opp   BO    Pos   PA    H     X2B   X3B   HR    R     RBI  
+##    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
+##  1 2018~ TBR   @TOR  4     2B    4     0     0     0     0     0     0    
+##  2 2018~ TBR   @TOR  5     2B    4     0     0     0     0     0     0    
+##  3 2018~ TBR   @TOR  5     SS-3B 4     3     1     0     0     1     0    
+##  4 2018~ TBR   @CLE  1     3B    5     2     1     0     0     1     1    
+##  5 2018~ TBR   @CLE  1     2B    5     2     1     0     0     1     0    
+##  6 2018~ TBR   @CLE  1     2B    4     1     0     0     0     0     0    
+##  7 2018~ TBR   @ATL  5     2B    5     2     0     0     0     2     2    
+##  8 2018~ TBR   @ATL  1     2B    5     2     0     0     0     1     0    
+##  9 2018~ TBR   BOS   1     2B    5     2     1     0     0     1     0    
+## 10 2018~ TBR   BOS   1     2B    5     2     0     0     0     0     1    
+## # ... with 109 more rows, and 11 more variables: SB &lt;chr&gt;, CS &lt;chr&gt;,
+## #   BB_perc &lt;dbl&gt;, K_perc &lt;dbl&gt;, ISO &lt;chr&gt;, BABIP &lt;chr&gt;, AVG &lt;chr&gt;,
+## #   OBP &lt;chr&gt;, SLG &lt;chr&gt;, wOBA &lt;chr&gt;, wRC_plus &lt;chr&gt;</code></pre>
+<p>We can do the same with the Baseball Savant data using the cooresponding player id - “621563”</p>
+<pre class="r"><code>joey_bsvnt &lt;- scrape_statcast_savant_batter(start_date = &quot;2018-03-29&quot;, end_date = Sys.Date(), batterid = &quot;621563&quot;)</code></pre>
+<pre class="r"><code>joey_bsvnt %&gt;% as_tibble()</code></pre>
+<pre><code>## # A tibble: 1,687 x 90
+##    pitch_type game_date  release_speed release_pos_x release_pos_z
+##    &lt;chr&gt;      &lt;date&gt;             &lt;dbl&gt;         &lt;dbl&gt;         &lt;dbl&gt;
+##  1 SI         2018-09-05          92.5         -2.44          5.48
+##  2 SI         2018-09-05          93.2         -2.39          5.70
+##  3 CH         2018-09-05          88.4         -2.03          5.53
+##  4 CU         2018-09-05          78.5         -1.87          5.67
+##  5 CU         2018-09-05          80.6         -1.98          5.63
+##  6 CU         2018-09-05          79.3         -1.92          5.65
+##  7 CU         2018-09-05          78.1         -2.02          5.69
+##  8 FT         2018-09-05          92.3         -1.90          5.69
+##  9 CH         2018-09-05          89.3         -1.92          5.57
+## 10 FT         2018-09-05          93.9         -1.88          5.60
+## # ... with 1,677 more rows, and 85 more variables: player_name &lt;chr&gt;,
+## #   batter &lt;int&gt;, pitcher &lt;int&gt;, events &lt;chr&gt;, description &lt;chr&gt;,
+## #   spin_dir &lt;chr&gt;, spin_rate_deprecated &lt;chr&gt;,
+## #   break_angle_deprecated &lt;chr&gt;, break_length_deprecated &lt;chr&gt;,
+## #   zone &lt;int&gt;, des &lt;chr&gt;, game_type &lt;chr&gt;, stand &lt;chr&gt;, p_throws &lt;chr&gt;,
+## #   home_team &lt;chr&gt;, away_team &lt;chr&gt;, type &lt;chr&gt;, hit_location &lt;int&gt;,
+## #   bb_type &lt;chr&gt;, balls &lt;int&gt;, strikes &lt;int&gt;, game_year &lt;int&gt;,
+## #   pfx_x &lt;dbl&gt;, pfx_z &lt;dbl&gt;, plate_x &lt;dbl&gt;, plate_z &lt;dbl&gt;, on_3b &lt;dbl&gt;,
+## #   on_2b &lt;dbl&gt;, on_1b &lt;dbl&gt;, outs_when_up &lt;int&gt;, inning &lt;int&gt;,
+## #   inning_topbot &lt;chr&gt;, hc_x &lt;dbl&gt;, hc_y &lt;dbl&gt;, tfs_deprecated &lt;chr&gt;,
+## #   tfs_zulu_deprecated &lt;chr&gt;, pos2_person_id &lt;int&gt;, umpire &lt;chr&gt;,
+## #   sv_id &lt;chr&gt;, vx0 &lt;dbl&gt;, vy0 &lt;dbl&gt;, vz0 &lt;dbl&gt;, ax &lt;dbl&gt;, ay &lt;dbl&gt;,
+## #   az &lt;dbl&gt;, sz_top &lt;dbl&gt;, sz_bot &lt;dbl&gt;, hit_distance_sc &lt;int&gt;,
+## #   launch_speed &lt;dbl&gt;, launch_angle &lt;dbl&gt;, effective_speed &lt;dbl&gt;,
+## #   release_spin_rate &lt;int&gt;, release_extension &lt;dbl&gt;, game_pk &lt;int&gt;,
+## #   pos1_person_id &lt;int&gt;, pos2_person_id_1 &lt;int&gt;, pos3_person_id &lt;int&gt;,
+## #   pos4_person_id &lt;int&gt;, pos5_person_id &lt;int&gt;, pos6_person_id &lt;int&gt;,
+## #   pos7_person_id &lt;int&gt;, pos8_person_id &lt;int&gt;, pos9_person_id &lt;int&gt;,
+## #   release_pos_y &lt;dbl&gt;, estimated_ba_using_speedangle &lt;dbl&gt;,
+## #   estimated_woba_using_speedangle &lt;dbl&gt;, woba_value &lt;dbl&gt;,
+## #   woba_denom &lt;int&gt;, babip_value &lt;int&gt;, iso_value &lt;int&gt;,
+## #   launch_speed_angle &lt;int&gt;, at_bat_number &lt;int&gt;, pitch_number &lt;int&gt;,
+## #   pitch_name &lt;chr&gt;, home_score &lt;int&gt;, away_score &lt;int&gt;, bat_score &lt;int&gt;,
+## #   fld_score &lt;int&gt;, post_away_score &lt;int&gt;, post_home_score &lt;int&gt;,
+## #   post_bat_score &lt;int&gt;, post_fld_score &lt;int&gt;,
+## #   if_fielding_alignment &lt;chr&gt;, of_fielding_alignment &lt;chr&gt;, barrel &lt;dbl&gt;</code></pre>
+<p>While the baseball savant data has a ton of information, it does not have stats per game or cumulative stats for the season. However, using the data that we have, these things can be calculated easily! To do this, we will define a custom function to calculate a few standard sabermetrics (i.e. batting average, slugging, on base percentage, etc.).</p>
+<pre class="r"><code>savant_daily &lt;- function(data){
+  output &lt;- data %&gt;% 
+    filter(!is.na(events), events != &quot;caught_stealing_2b&quot;) %&gt;% 
+    mutate(
+      is_ab = if_else(
+        events %in% c(&quot;strikeout&quot;, &quot;field_out&quot;, &quot;single&quot;, &quot;double&quot;, &quot;force_out&quot;, 
+                      &quot;triple&quot;, &quot;home_run&quot;, &quot;double_play&quot;, &quot;field_error&quot;, &quot;grounded_into_double_play&quot;,
+                      &quot;strikeout_double_play&quot;, &quot;fielders_choice_out&quot;),
+        TRUE,
+        FALSE
+      ),
+      is_hit = if_else(
+        events %in% c(&quot;single&quot;, &quot;double&quot;, &quot;triple&quot;, &quot;home_run&quot;), TRUE, FALSE
+      ),
+      bases = case_when(
+        events == &quot;single&quot; ~ 1,
+        events == &quot;double&quot; ~ 2,
+        events == &quot;triple&quot; ~ 3,
+        events == &quot;home_run&quot; ~ 4,
+        TRUE ~ 0
+      ),
+      event_custom = case_when(
+        events %in% c(&quot;single&quot;, &quot;double&quot;, &quot;triple&quot;, &quot;home_run&quot;) ~ events, 
+        str_detect(events, &quot;sac&quot;) ~ &quot;sacrifice&quot;,
+        events %in% c(&quot;walk&quot;, &quot;hit_by_pitch&quot;) ~ NA_character_,
+        events == &quot;field_error&quot; ~ &quot;error&quot;,
+        TRUE ~ &quot;out&quot;
+      )
+    ) %&gt;% 
+    group_by(game_date) %&gt;% 
+    summarize(
+      pa = length(unique(at_bat_number)),
+      ab = sum(is_ab),
+      hits = sum(is_hit),
+      doubles = sum(events == &quot;double&quot;),
+      triples = sum(events == &quot;triples&quot;),
+      home_runs = sum(events == &quot;home_run&quot;),
+      bb = sum(events == &quot;walk&quot;),
+      hbp = sum(events == &quot;hit_by_pitch&quot;),
+      so = sum(events %in% c(&quot;strikeout&quot;, &quot;strikeout_double_play&quot;)),
+      bases = sum(bases)
+    ) %&gt;% 
+    arrange(game_date) %&gt;% 
+    mutate(
+      ba = round(hits/ab, 3),
+      obp = round((hits + bb + hbp)/(ab + bb + hbp), 3),
+      slg = round(bases/ab, 3),
+      ops = obp + slg,
+      hits_to_date = cumsum(hits),
+      bb_to_date = cumsum(bb),
+      hbp_to_date = cumsum(hbp),
+      ab_to_date = cumsum(ab),
+      bases_to_date = cumsum(bases),
+      ba_to_date = round(hits_to_date/ab_to_date, 3),
+      obp_to_date = round(
+        (hits_to_date + bb_to_date + hbp_to_date)/(ab_to_date + bb_to_date + hbp_to_date), 3
+      ),
+      slg_to_date = round(bases_to_date/ab_to_date, 3),
+      ops_to_date = obp_to_date + slg_to_date
+    )
+  
+  return(output)
+}</code></pre>
+<pre class="r"><code>joey_bsvnt_daily &lt;- savant_daily(joey_bsvnt)
+
+joey_bsvnt_daily %&gt;% glimpse()</code></pre>
+<pre><code>## Observations: 117
+## Variables: 24
+## $ game_date     &lt;date&gt; 2018-03-29, 2018-03-30, 2018-03-31, 2018-04-01,...
+## $ pa            &lt;int&gt; 1, 1, 4, 4, 3, 1, 3, 2, 5, 6, 4, 4, 4, 4, 4, 2, ...
+## $ ab            &lt;int&gt; 1, 1, 3, 4, 3, 1, 3, 2, 5, 3, 3, 4, 3, 2, 3, 2, ...
+## $ hits          &lt;int&gt; 0, 0, 0, 2, 0, 1, 2, 1, 2, 1, 0, 0, 1, 0, 0, 1, ...
+## $ doubles       &lt;int&gt; 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, ...
+## $ triples       &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...
+## $ home_runs     &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, ...
+## $ bb            &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 0, 1, 1, 1, 0, ...
+## $ hbp           &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, ...
+## $ so            &lt;int&gt; 0, 0, 2, 0, 0, 0, 1, 0, 1, 2, 1, 2, 0, 1, 0, 1, ...
+## $ bases         &lt;dbl&gt; 0, 0, 0, 3, 0, 1, 3, 3, 5, 1, 0, 0, 2, 0, 0, 1, ...
+## $ ba            &lt;dbl&gt; 0.000, 0.000, 0.000, 0.500, 0.000, 1.000, 0.667,...
+## $ obp           &lt;dbl&gt; 0.000, 0.000, 0.000, 0.500, 0.000, 1.000, 0.667,...
+## $ slg           &lt;dbl&gt; 0.000, 0.000, 0.000, 0.750, 0.000, 1.000, 1.000,...
+## $ ops           &lt;dbl&gt; 0.000, 0.000, 0.000, 1.250, 0.000, 2.000, 1.667,...
+## $ hits_to_date  &lt;int&gt; 0, 0, 0, 2, 2, 3, 5, 6, 8, 9, 9, 9, 10, 10, 10, ...
+## $ bb_to_date    &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4, 4, 5, 6, 7, 7, ...
+## $ hbp_to_date   &lt;int&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, ...
+## $ ab_to_date    &lt;int&gt; 1, 2, 5, 9, 12, 13, 16, 18, 23, 26, 29, 33, 36, ...
+## $ bases_to_date &lt;dbl&gt; 0, 0, 0, 3, 3, 4, 7, 10, 15, 16, 16, 16, 18, 18,...
+## $ ba_to_date    &lt;dbl&gt; 0.000, 0.000, 0.000, 0.222, 0.167, 0.231, 0.312,...
+## $ obp_to_date   &lt;dbl&gt; 0.000, 0.000, 0.000, 0.222, 0.167, 0.231, 0.312,...
+## $ slg_to_date   &lt;dbl&gt; 0.000, 0.000, 0.000, 0.333, 0.250, 0.308, 0.438,...
+## $ ops_to_date   &lt;dbl&gt; 0.000, 0.000, 0.000, 0.555, 0.417, 0.539, 0.750,...</code></pre>
+</div>
+<div id="fielding-positions" class="section level1">
+<h1>Fielding Positions</h1>
+<p>Joey started the season sharing second base duties and was not used in many other positions. However, as the season has progressed, the Rays have given him oppurtunites at several other positions and Joey has stepped up every time. I mean, just look at those web gems in the tweet at the beginning of this post! Seriously, go watch them again, I will wait…</p>
+<p>As a first stab at <code>gganimate</code>, let’s take a look at where Joey has played each game with the help of <code>baseballr</code>’s <code>ggspraychart</code> function. First, we can define coordinates (relative to <code>ggspraycharts</code> field definition) for each of the positions that he has played.</p>
+<pre class="r"><code>position_loc &lt;- tribble(
+  ~position, ~x, ~y, 
+  &quot;2B&quot;, 145, -145,
+  &quot;3B&quot;, 100, -160,
+  &quot;SS&quot;, 111, -144,
+  &quot;LF&quot;, 80, -100,
+  &quot;RF&quot;, 176, -100
+)</code></pre>
+<p>Since Joey has played multiple positions in single games, a simple left join os not entirely appropriate. Using the <a href="https://github.com/dgrtwo/fuzzyjoin"><code>fuzzyjoin</code></a> package, we can match the position coordinates with the positions that are defined in the <code>joey_fg</code> dataset by regex.</p>
+<pre class="r"><code>joey_position &lt;- joey_fg %&gt;% 
+  fuzzyjoin::regex_left_join(position_loc, by = c(&quot;Pos&quot; = &quot;position&quot;)) %&gt;% 
+  mutate(Date = lubridate::ymd(Date))</code></pre>
+<p>Now, using the <code>ggspraychart</code> and the <code>transition_time</code> function, we can see how his position has changed with each day.</p>
+<pre class="r"><code>position_chart &lt;- joey_position %&gt;% 
+  filter(!is.na(position)) %&gt;% 
+  ggspraychart(x_value = &quot;x&quot;, y_value = &quot;y&quot;, fill_value = &quot;position&quot;) + 
+  scale_fill_manual(values = c(&quot;2B&quot; = &quot;red&quot;, &quot;3B&quot; = &quot;blue&quot;,
+                               &quot;SS&quot; = &quot;green&quot;, &quot;LF&quot; = &quot;yellow&quot;, 
+                               &quot;RF&quot; = &quot;black&quot;), na.translate = FALSE) + 
+  labs(title = &quot;Joey Wendle 2018 position by game:{frame_time}&quot;,
+       caption = &quot;Data source: fangraphs.com\nBuilt with the baseballr package\n&quot;) + 
+  transition_time(Date) + 
+  theme(
+    legend.title = element_blank(),
+    plot.title = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = &quot;bold&quot;),
+    legend.text = element_text(size = 12, face = &quot;bold&quot;)
+  )
+
+animate(position_chart, width = 800, height = 800)</code></pre>
+<center>
+<img src="/images/joey-rookie/position-chart.gif" />
+</center>
+<p>As this animation shows, he has been moved around the field much more towards the end of the year!</p>
+</div>
+<div id="batting" class="section level1">
+<h1>Batting</h1>
+<p>Now let’s use the <code>ggspraychart</code> to see how Joey’s hits have accumulated over the course of the season and where he tends to hit the ball. For this, we will use the raw baseball savant dataset <code>joey_bsvnt</code> and use the function <code>transition_reveal</code>. This function allows for data to be added over a range rather than only showing the data for a specific date.</p>
+<pre class="r"><code>joey_spray &lt;- joey_bsvnt %&gt;% 
+  filter(events %in% c(&quot;single&quot;, &quot;double&quot;, &quot;triple&quot;, &quot;home_run&quot;)) %&gt;% 
+  mutate(events = factor(events, levels = c(&quot;single&quot;, &quot;double&quot;, &quot;triple&quot;, &quot;home_run&quot;),
+                         labels = c(&quot;Single&quot;, &quot;Double&quot;, &quot;Triple&quot;, &quot;Home Run&quot;))) %&gt;% 
+  ggspraychart(fill_value = &quot;events&quot;, 
+               fill_palette = c(&quot;Single&quot;=&quot;#A2C8EC&quot;, &quot;Double&quot;=&quot;#006BA4&quot;, 
+                                &quot;Triple&quot;=&quot;#FF940E&quot;, &quot;Home Run&quot;=&quot;#C85200&quot;)) + 
+  labs(title = &quot;Joey Wendle 2018 hits to date: {frame_time}&quot;,
+       caption = &quot;Data source: baseballsavant.com\nBuilt with the baseballr package\n&quot;) + 
+  transition_reveal(game_date, game_date) + 
+  theme(
+    legend.title = element_blank(),
+    plot.title = element_text(size = 14),
+    plot.caption = element_text(size = 10, face = &quot;bold&quot;),
+    legend.text = element_text(size = 12, face = &quot;bold&quot;)
+  )
+
+
+animate(joey_spray, width = 800, height = 800)</code></pre>
+<center>
+<img src="/images/joey-rookie/spray-anim.gif" />
+</center>
+<p>From this animation, Joey seems to hit most of his home runs to right field, but other than that he seems to spread his hits all around the field.</p>
+<p>Let’s take a look at how Joey’s batting average has changed over time. We can use the daily statistics we calculated earlier to see how it changes over time using the <code>transition_reveal</code> function.</p>
+<pre class="r"><code>joey_rbi &lt;- joey_bsvnt_daily %&gt;% 
+  ggplot(aes(game_date, ba_to_date)) + 
+  geom_step(line = 2) + 
+  theme_bw() + 
+  labs(
+    y = &quot;Batting Average&quot;,
+    title = &quot;Joey Wendle&#39;s batting average during the 2018 season&quot;,
+    caption = &quot;Data source: baseballsavant.com\n&quot;
+  ) + 
+  scale_x_date(date_breaks = &quot;2 weeks&quot;, date_labels = &quot;%B %d, %Y&quot;) + 
+  scale_y_continuous(breaks = seq(0, 0.35, 0.05)) + 
+  theme(
+    plot.title = element_text(size = 14, face = &quot;bold&quot;),
+    plot.caption = element_text(size = 10, face = &quot;bold&quot;),
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, face = &quot;bold&quot;),
+    axis.text.y = element_text(face = &quot;bold&quot;)
+  ) + 
+  transition_reveal(id = game_date, along = game_date) 
+
+
+animate(joey_rbi, width = 800, height = 600)</code></pre>
+<center>
+<img src="/images/joey-rookie/rbi-anim.gif" />
+</center>
+<p>As we can see, Joey has stayed fairly consistent between 0.275 and 0.300 and has only been improving since the all-star break. Using the same functionality, we can look at multiple stats all at once by simply faceting the graphs. Here we can see how his batting average, slugging percentage and on-base percentage have changed over the course of the season.</p>
+<pre class="r"><code>multi_stats &lt;- joey_bsvnt_daily %&gt;% 
+  select(game_date, ba_to_date, slg_to_date, obp_to_date) %&gt;% 
+  gather(key = &quot;metric&quot;, value = &quot;value&quot;, -game_date) %&gt;% 
+  mutate(metric = case_when(
+    metric == &quot;ba_to_date&quot; ~ &quot;Batting Average&quot;,
+    metric == &quot;slg_to_date&quot; ~ &quot;Slugging&quot;,
+    metric == &quot;obp_to_date&quot; ~ &quot;On-base Percentage&quot;
+  )) %&gt;% 
+  ggplot(aes(game_date, value)) + 
+  geom_step(size = 2) + 
+  facet_wrap(vars(metric), scales = &quot;free_y&quot;, ncol = 1) + 
+  theme_bw() + 
+  scale_x_date(date_breaks = &quot;2 week&quot;, date_labels = &quot;%B %d, %Y&quot;) + 
+  theme(
+    plot.title = element_text(size = 14, face = &quot;bold&quot;),
+    plot.caption = element_text(size = 10, face = &quot;bold&quot;),
+    axis.title = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, face = &quot;bold&quot;),
+    axis.text.y = element_text(face = &quot;bold&quot;)
+  ) + 
+  labs(
+   title = &quot;Joey Wendle&#39;s batting average, slugging, and on-base percentage, respectively&quot;,
+   caption = &quot;Data source: baseballsavant.com\n&quot;
+  ) + 
+  transition_reveal(game_date, game_date)
+
+animate(multi_stats, width = 800, height = 1000)</code></pre>
+<center>
+<img src="/images/joey-rookie/multi-stats.gif" />
+</center>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Joey is having a breakout year and the <code>gganimate</code> package gives us a cool way of viewing his progress over the course of the season. I hope you enjoyed the examples and I hope you root for Joey to finish off the year strong!</p>
+<p>Please let me know what you think!</p>
+</div>
