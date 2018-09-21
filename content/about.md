@@ -3,7 +3,7 @@ title = "About"
 date = "2018-08-21"
 +++
 
-<img src="/images/headshot-tyler-bradley-small.jpg", width="250px", height="200px", align = "right"/>
+<img src="/images/headshot-tyler-bradley-small.png", align = "right"/>
 
 My Name is Tyler Bradley and I am an Environmental Engineer for the Philadelphia Water Department. I work mostly with drinking water distribution system water quality data. Most of my day to day work is focused on data science. Some of my responsibilites include:
 
