@@ -56,9 +56,15 @@ publishDir = "../tbradley1013.github.io"
     identifier = "presentations"
     url = "/presentations/"
   [[menu.main]]
+    name = "Tags"
+    pre = "<i class='fa fa-tags fa-fw'></i>"
+    weight = 5
+    identifier = "tag"
+    url = "/tags/"
+  [[menu.main]]
     name = "About"
     pre = "<i class='fa fa-user fa-fw'></i>"
-    weight = 5
+    weight = 6
     identifier = "about"
     url = "/about/"
 
