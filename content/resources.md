@@ -58,7 +58,7 @@ This is a (far from comprehensive) list of resources that I find useful. This li
 
 * [Configure Proxies](https://askubuntu.com/questions/175172/how-do-i-configure-proxies-without-gui)
 
-# Envionmental Engineering
+# Environmental Engineering
 
 ### R Packages
 
