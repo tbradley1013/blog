@@ -44,27 +44,39 @@ publishDir = "../tbradley1013.github.io"
     identifier = "post"
     url = "/post/"
   [[menu.main]]
-    name = "Publications"
-    pre = "<i class='fa fa-list fa-fw'></i>"
+    name = "R"
+    pre = "<i class='fa fa-tags fa-fw'></i>"
     weight = 3
+    identifer = "r"
+    url = "/tags/rstats/"
+  [[menu.main]]
+    name = "Tags"
+    pre = "<i class='fa fa-tags fa-fw'></i>"
+    weight = 4
+    identifier = "tag"
+    url = "/tags/"
+  [[menu.main]]
+    name = "Publications"
+    pre = "<i class='fa fa-book fa-fw'></i>"
+    weight = 5
     identifier = "publications"
     url = "/publications/"
   [[menu.main]]
     name = "Presentations"
-    pre = "<i class='fa fa-list fa-fw'></i>"
-    weight = 4
+    pre = "<i class='fa fa-laptop fa-fw'></i>"
+    weight = 6
     identifier = "presentations"
     url = "/presentations/"
   [[menu.main]]
-    name = "Tags"
-    pre = "<i class='fa fa-tags fa-fw'></i>"
-    weight = 5
-    identifier = "tag"
-    url = "/tags/"
+    name = "Resources"
+    pre = "<i class='fa fa-bookmark fa-fw'></i>"
+    weight = 7
+    identifier = "resources"
+    url = "/resources/"
   [[menu.main]]
     name = "About"
     pre = "<i class='fa fa-user fa-fw'></i>"
-    weight = 6
+    weight = 8
     identifier = "about"
     url = "/about/"
 
