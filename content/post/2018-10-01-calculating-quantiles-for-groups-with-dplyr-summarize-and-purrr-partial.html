@@ -1,0 +1,74 @@
+---
+title: Calculating quantiles for groups with dplyr::summarize and purrr::partial
+author: Tyler Bradley
+date: '2018-10-01'
+slug: calculating-quantiles-for-groups-with-dplyr-summarize-and-purrr-partial
+categories:
+  - R
+tags:
+  - rstats
+  - dplyr
+  - purrr
+description: ''
+topics: []
+---
+
+
+
+<p>Recently, I was trying to calculate the percentiles of a set of variables within a data set grouped by another variable. However, I quickly ran into the realization that this is not very straight forward when using <code>dplyr</code>’s <code>summarize</code>. Before I demonstrate, let’s load the libraries that we will need.</p>
+<pre class="r"><code>library(dplyr)
+library(purrr)</code></pre>
+<p>If you don’t believe me when I say that it is not straight forward, go ahead and try to run the following block of code.</p>
+<pre class="r"><code>mtcars %&gt;% 
+  dplyr::group_by(cyl) %&gt;% 
+  dplyr::summarize(quants = quantile(mpg, probs = c(0.2, 0.5, 0.8)))</code></pre>
+<p>If you ran the code, you will see that it throws the following error:</p>
+<pre><code>Error in summarise_impl(.data, dots) : 
+  Column `quants` must be length 1 (a summary value), not 3</code></pre>
+<p>This error is telling us that the result is returning an object of length 3 (our three quantiles) when it is expecting to get only one value. A quick Google search comes up with <a href="https://stackoverflow.com/questions/30488389/using-dplyr-window-functions-to-calculate-percentiles">numerous</a> <a href="https://stackoverflow.com/questions/46935464/dplyr-to-count-means-by-group-and-then-quantiles-for-each">stack</a> <a href="https://stackoverflow.com/questions/46177312/how-to-find-quantile-of-grouped-variable-in-dplyr">overflow</a> <a href="https://stackoverflow.com/questions/37845915/how-to-use-quantile-with-dplyr-and-group-by">questions</a> and <a href="https://groups.google.com/forum/#!topic/manipulatr/jEUIbQi-iuA">answers</a> about this. Most of these solutions revolve around using the <code>do</code> function to calculate the quantiles on each of the groups. However, according to <a href="https://community.rstudio.com/t/should-i-move-away-from-do-and-rowwise/2857/2">Hadley</a>, <code>do</code> will eventually be “going away”. While there is no definite time frame on this, I try to use it as little as possible. The new recommended practice is a combination of <code>tidyr::nest</code>, <code>dplyr::mutate</code> and <code>purrr::map</code> for most cases of grouping. I love this approach for most things (and it is even the accepted for one of <a href="https://stackoverflow.com/questions/30488389/using-dplyr-window-functions-to-calculate-percentiles">the SO questions mentioned above</a>) but I worked up a new solution that I think is useful for calculating percentiles on multiple groups for any desired number of percentiles.</p>
+<p>This method uses <code>purrr::map</code> and a <a href="http://adv-r.had.co.nz/Function-operators.html">Function Operator</a>, <a href="https://rdrr.io/cran/purrr/man/partial.html"><code>purrr::partial</code></a>, to create a list of functions that can than be applied to a data set using <code>dplyr::summarize_at</code> and a little magic from <code>rlang</code>.</p>
+<p>Let’s start by creating a vector of the desired percentiles to calculate. In this example, we will calculate the 20<sup>th</sup>, 50<sup>th</sup>, and 80<sup>th</sup> percentiles.</p>
+<pre class="r"><code>p &lt;- c(0.2, 0.5, 0.8)</code></pre>
+<p>Now we can create a list of functions, with one for each quantile, using <code>purrr::map</code> and <code>purrr::partial</code>. We can also assign names to each functions (useful for the output of <code>summarize</code>) using <code>purrr::set_names</code></p>
+<pre class="r"><code>p_names &lt;- map_chr(p, ~paste0(.x*100, &quot;%&quot;))
+
+p_funs &lt;- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %&gt;% 
+  set_names(nm = p_names)
+
+p_funs</code></pre>
+<pre><code>## $`20%`
+## function (...) 
+## quantile(probs = .x, na.rm = TRUE, ...)
+## &lt;environment: 0x00000000190c6fa0&gt;
+## 
+## $`50%`
+## function (...) 
+## quantile(probs = .x, na.rm = TRUE, ...)
+## &lt;environment: 0x00000000190d6638&gt;
+## 
+## $`80%`
+## function (...) 
+## quantile(probs = .x, na.rm = TRUE, ...)
+## &lt;environment: 0x0000000019158818&gt;</code></pre>
+<p>Looking at <code>p_funs</code> we can see that we have a named list with each element containing a function comprised of the <code>quantile</code> function. The beauty of this is that you can use this list in the same way you would define multiple functions in any other <code>summarize_at</code> or <code>summarize_all</code> functions (i.e. <code>funs(mean, sd)</code>). The only difference is that we will now have to use the “bang-bang-bang” operator (<code>!!!</code>) from <code>rlang</code> (it is also exported from <code>dplyr</code>). The final product looks like this.</p>
+<pre class="r"><code>mtcars %&gt;% 
+  group_by(cyl) %&gt;% 
+  summarize_at(vars(mpg), funs(!!!p_funs))</code></pre>
+<pre><code>## # A tibble: 3 x 4
+##     cyl `20%` `50%` `80%`
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1     4  22.8  26    30.4
+## 2     6  18.3  19.7  21  
+## 3     8  13.9  15.2  16.8</code></pre>
+<p>I think that this provides a pretty neat way to get the desired output in a format that does not require a large amount of post calculation manipulation. In addition, it is, in my opinion, more straightforward than a lot of the <code>do</code> methods. This method also allows for quantiles to be calculated for more than one variable, although post-processing would be necessary in that case. Here is an example.</p>
+<pre class="r"><code>mtcars %&gt;% 
+  group_by(cyl) %&gt;% 
+  summarize_at(vars(mpg, hp), funs(!!!p_funs)) %&gt;% 
+  select(cyl, contains(&quot;mpg&quot;), contains(&quot;hp&quot;))</code></pre>
+<pre><code>## # A tibble: 3 x 7
+##     cyl `mpg_20%` `mpg_50%` `mpg_80%` `hp_20%` `hp_50%` `hp_80%`
+##   &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1     4      22.8      26        30.4       65      91        97
+## 2     6      18.3      19.7      21        110     110       123
+## 3     8      13.9      15.2      16.8      175     192.      245</code></pre>
+<p><code>partial</code> is <em>yet another</em> tool from the <code>purrr</code> package that can greatly enhance your R coding abilities. While this is surely a basic application of its functionality, one can easily see how powerful this function can be.</p>

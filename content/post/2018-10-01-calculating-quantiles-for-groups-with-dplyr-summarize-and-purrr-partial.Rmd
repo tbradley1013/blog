@@ -1,0 +1,90 @@
+---
+title: Calculating quantiles for groups with dplyr::summarize and purrr::partial
+author: Tyler Bradley
+date: '2018-10-01'
+slug: calculating-quantiles-for-groups-with-dplyr-summarize-and-purrr-partial
+categories:
+  - R
+tags:
+  - rstats
+  - dplyr
+  - purrr
+description: ''
+topics: []
+---
+
+
+Recently, I was trying to calculate the percentiles of a set of variables within a data set grouped by another variable. However, I quickly ran into the realization that this is not very straight forward when using `dplyr`'s `summarize`. Before I demonstrate, let's load the libraries that we will need.
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
+```
+
+```{r load-libraries}
+library(dplyr)
+library(purrr)
+```
+
+If you don't believe me when I say that it is not straight forward, go ahead and try to run the following block of code. 
+
+```{r throws-error, eval = FALSE}
+mtcars %>% 
+  dplyr::group_by(cyl) %>% 
+  dplyr::summarize(quants = quantile(mpg, probs = c(0.2, 0.5, 0.8)))
+
+```
+
+If you ran the code, you will see that it throws the following error:
+
+```
+Error in summarise_impl(.data, dots) : 
+  Column `quants` must be length 1 (a summary value), not 3
+```
+
+This error is telling us that the result is returning an object of length 3 (our three quantiles) when it is expecting to get only one value. A quick Google search comes up with [numerous](https://stackoverflow.com/questions/30488389/using-dplyr-window-functions-to-calculate-percentiles) [stack](https://stackoverflow.com/questions/46935464/dplyr-to-count-means-by-group-and-then-quantiles-for-each) [overflow](https://stackoverflow.com/questions/46177312/how-to-find-quantile-of-grouped-variable-in-dplyr) [questions](https://stackoverflow.com/questions/37845915/how-to-use-quantile-with-dplyr-and-group-by) and [answers](https://groups.google.com/forum/#!topic/manipulatr/jEUIbQi-iuA) about this. Most of these solutions revolve around using the `do` function to calculate the quantiles on each of the groups. However, according to [Hadley](https://community.rstudio.com/t/should-i-move-away-from-do-and-rowwise/2857/2), `do` will eventually be "going away". While there is no definite time frame on this, I try to use it as little as possible. The new recommended practice is a combination of `tidyr::nest`, `dplyr::mutate` and `purrr::map` for most cases of grouping. I love this approach for most things (and it is even the accepted for one of [the SO questions mentioned above](https://stackoverflow.com/questions/30488389/using-dplyr-window-functions-to-calculate-percentiles)) but I worked up a new solution that I think is useful for calculating percentiles on multiple groups for any desired number of percentiles. 
+
+This method uses `purrr::map` and a [Function Operator](http://adv-r.had.co.nz/Function-operators.html), [`purrr::partial`](https://rdrr.io/cran/purrr/man/partial.html), to create a list of functions that can than be applied to a data set using `dplyr::summarize_at` and a little magic from `rlang`.
+
+Let's start by creating a vector of the desired percentiles to calculate. In this example, we will calculate the 20<sup>th</sup>, 50<sup>th</sup>, and 80<sup>th</sup> percentiles. 
+
+
+```{r quantile-vec}
+p <- c(0.2, 0.5, 0.8)
+
+```
+
+Now we can create a list of functions, with one for each quantile, using `purrr::map` and `purrr::partial`. We can also assign names to each functions (useful for the output of `summarize`) using `purrr::set_names`
+
+```{r func_name}
+p_names <- map_chr(p, ~paste0(.x*100, "%"))
+
+p_funs <- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %>% 
+  set_names(nm = p_names)
+
+p_funs
+```
+
+Looking at `p_funs` we can see that we have a named list with each element containing a function comprised of the `quantile` function. The beauty of this is that you can use this list in the same way you would define multiple functions in any other `summarize_at` or `summarize_all` functions (i.e. `funs(mean, sd)`). The only difference is that we will now have to use the "bang-bang-bang" operator (`!!!`) from `rlang` (it is also exported from `dplyr`). The final product looks like this. 
+
+```{r summary-1}
+mtcars %>% 
+  group_by(cyl) %>% 
+  summarize_at(vars(mpg), funs(!!!p_funs))
+
+```
+
+I think that this provides a pretty neat way to get the desired output in a format that does not require a large amount of post calculation manipulation. In addition, it is, in my opinion, more straightforward than a lot of the `do` methods. This method also allows for quantiles to be calculated for more than one variable, although post-processing would be necessary in that case. Here is an example. 
+
+```{r summary-2}
+mtcars %>% 
+  group_by(cyl) %>% 
+  summarize_at(vars(mpg, hp), funs(!!!p_funs)) %>% 
+  select(cyl, contains("mpg"), contains("hp"))
+
+```
+
+`partial` is *yet another* tool from the `purrr` package that can greatly enhance your R coding abilities. While this is surely a basic application of its functionality, one can easily see how powerful this function can be. 
