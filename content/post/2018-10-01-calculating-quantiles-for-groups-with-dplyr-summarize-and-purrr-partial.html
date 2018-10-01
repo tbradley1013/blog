@@ -1,4 +1,5 @@
 ---
+draft: yes
 title: Calculating quantiles for groups with dplyr::summarize and purrr::partial
 author: Tyler Bradley
 date: '2018-10-01'
@@ -29,7 +30,7 @@ library(purrr)</code></pre>
 <p>This method uses <code>purrr::map</code> and a <a href="http://adv-r.had.co.nz/Function-operators.html">Function Operator</a>, <a href="https://rdrr.io/cran/purrr/man/partial.html"><code>purrr::partial</code></a>, to create a list of functions that can than be applied to a data set using <code>dplyr::summarize_at</code> and a little magic from <code>rlang</code>.</p>
 <p>Let’s start by creating a vector of the desired percentiles to calculate. In this example, we will calculate the 20<sup>th</sup>, 50<sup>th</sup>, and 80<sup>th</sup> percentiles.</p>
 <pre class="r"><code>p &lt;- c(0.2, 0.5, 0.8)</code></pre>
-<p>Now we can create a list of functions, with one for each quantile, using <code>purrr::map</code> and <code>purrr::partial</code>. We can also assign names to each functions (useful for the output of <code>summarize</code>) using <code>purrr::set_names</code></p>
+<p>Now we can create a list of functions, with one for each quantile, using <code>purrr::map</code> and <code>purrr::partial</code>. We can also assign names to each function (useful for the output of <code>summarize</code>) using <code>purrr::set_names</code></p>
 <pre class="r"><code>p_names &lt;- map_chr(p, ~paste0(.x*100, &quot;%&quot;))
 
 p_funs &lt;- map(p, ~partial(quantile, probs = .x, na.rm = TRUE)) %&gt;% 
@@ -39,17 +40,17 @@ p_funs</code></pre>
 <pre><code>## $`20%`
 ## function (...) 
 ## quantile(probs = .x, na.rm = TRUE, ...)
-## &lt;environment: 0x00000000190c6fa0&gt;
+## &lt;environment: 0x7fcf50757430&gt;
 ## 
 ## $`50%`
 ## function (...) 
 ## quantile(probs = .x, na.rm = TRUE, ...)
-## &lt;environment: 0x00000000190d6638&gt;
+## &lt;environment: 0x7fcf50762c30&gt;
 ## 
 ## $`80%`
 ## function (...) 
 ## quantile(probs = .x, na.rm = TRUE, ...)
-## &lt;environment: 0x0000000019158818&gt;</code></pre>
+## &lt;environment: 0x7fcf51148830&gt;</code></pre>
 <p>Looking at <code>p_funs</code> we can see that we have a named list with each element containing a function comprised of the <code>quantile</code> function. The beauty of this is that you can use this list in the same way you would define multiple functions in any other <code>summarize_at</code> or <code>summarize_all</code> functions (i.e. <code>funs(mean, sd)</code>). The only difference is that we will now have to use the “bang-bang-bang” operator (<code>!!!</code>) from <code>rlang</code> (it is also exported from <code>dplyr</code>). The final product looks like this.</p>
 <pre class="r"><code>mtcars %&gt;% 
   group_by(cyl) %&gt;% 

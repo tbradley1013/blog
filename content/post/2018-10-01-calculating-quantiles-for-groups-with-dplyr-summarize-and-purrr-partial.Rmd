@@ -57,7 +57,7 @@ p <- c(0.2, 0.5, 0.8)
 
 ```
 
-Now we can create a list of functions, with one for each quantile, using `purrr::map` and `purrr::partial`. We can also assign names to each functions (useful for the output of `summarize`) using `purrr::set_names`
+Now we can create a list of functions, with one for each quantile, using `purrr::map` and `purrr::partial`. We can also assign names to each function (useful for the output of `summarize`) using `purrr::set_names`
 
 ```{r func_name}
 p_names <- map_chr(p, ~paste0(.x*100, "%"))
