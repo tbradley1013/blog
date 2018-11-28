@@ -3,6 +3,7 @@ title = "Presentations"
 +++
 
 **Comparing Illumina MiSeq and PacBio SMRT Sequencing of Fecal Samples from Various Animal Sources Potentially Contributing to Microbial Contamination of the Delaware River Watershed**<br/>
+Authors: Tyler Bradley, Jacob R. Price, Christopher M. Sales<br/>
 *Delaware Watershed Research Conferece 2018*<br/>
 Philadelphia, PA - November 2018<br/>
 **Abstract**<br/>
@@ -15,6 +16,7 @@ Investigators researching microbiomes are faced with the challenge of selecting 
 
 
 **Developing a New Approach for Proactive Nitrification Monitoring in a Chloraminated Drinking Water Distribution System**<br/>
+Authors: Tyler Bradley, Tim Bartrand, Sheldon Masters<br/>
 *AWWA Water Quality Technology Conference*<br/>
 Toronto, ON, Canada - November 2018<br/>
 **Abstract**<br/>
