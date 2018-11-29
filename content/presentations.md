@@ -2,7 +2,7 @@
 title = "Presentations"
 +++
 
-**Comparing Illumina MiSeq and PacBio SMRT Sequencing of Fecal Samples from Various Animal Sources Potentially Contributing to Microbial Contamination of the Delaware River Watershed**<br/>
+[**Comparing Illumina MiSeq and PacBio SMRT Sequencing of Fecal Samples from Various Animal Sources Potentially Contributing to Microbial Contamination of the Delaware River Watershed**](/presentations/comparing-communities-presentation.pdf)<br/>
 Authors: Tyler Bradley, Jacob R. Price, Christopher M. Sales<br/>
 *Delaware Watershed Research Conferece 2018*<br/>
 Philadelphia, PA - November 2018<br/>
