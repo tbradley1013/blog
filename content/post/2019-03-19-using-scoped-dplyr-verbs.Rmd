@@ -34,7 +34,7 @@ These scoped verbs typically come in three different flavors:
   
 Before we get started, let's go ahead and load the libraries we will be using. 
   
-```{r load-libs}
+```{r load-libs, message = FALSE}
 library(dplyr)
 library(ggplot2)
 library(tibble)
