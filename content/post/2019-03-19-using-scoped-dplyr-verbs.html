@@ -1,0 +1,542 @@
+---
+title: 'Using Scoped dplyr verbs '
+author: Tyler Bradley
+date: '2019-03-19'
+slug: using-scoped-dplyr-verbs
+categories:
+  - R
+tags:
+  - dplyr
+  - rstats
+  - tidyverse
+description: ''
+topics: []
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Over the past several months, I have really started to increase the amount that I have been using scoped <code>dplyr</code> verbs. For those of you who don’t know about these functions, they are handy variants to the normal <code>dplyr</code> verbs, such as <code>filter</code>, <code>mutate</code>, and <code>summarize</code>, that allow you to target multiple columns or all of your columns. These functions allow for you to save yourself time and typing when you want to apply either one or multiple functions to more than one column, a group of columns, or to all of your columns. This post will walk through a few of the ones I use on a regular basis and how I use them!</p>
+<p>These scoped verbs typically come in three different flavors:</p>
+<ul>
+<li><code>_if</code> - This allows you to target all columns that mean a specific condition</li>
+<li><code>_at</code> - This allows you to target specific columns by name</li>
+<li><code>_all</code> - As the name implies, this will apply a function to every column of the data set</li>
+</ul>
+<p>Before we get started, let’s go ahead and load the libraries we will be using.</p>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(tibble)
+library(stringr)
+library(gt) # for the sp500 dataset
+library(janitor)</code></pre>
+</div>
+<div id="if" class="section level1">
+<h1><code>_if</code></h1>
+<p>Let’s first take a look at <code>mutate_if</code> by looking at an example where we want to convert factors to character variables. The data set we will be using for this example is <code>diamonds</code> in the <code>ggplot2</code> package.</p>
+<pre class="r"><code>diamonds</code></pre>
+<pre><code>## # A tibble: 53,940 x 10
+##    carat cut       color clarity depth table price     x     y     z
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;ord&gt; &lt;ord&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 0.23  Ideal     E     SI2      61.5    55   326  3.95  3.98  2.43
+##  2 0.21  Premium   E     SI1      59.8    61   326  3.89  3.84  2.31
+##  3 0.23  Good      E     VS1      56.9    65   327  4.05  4.07  2.31
+##  4 0.290 Premium   I     VS2      62.4    58   334  4.2   4.23  2.63
+##  5 0.31  Good      J     SI2      63.3    58   335  4.34  4.35  2.75
+##  6 0.24  Very Good J     VVS2     62.8    57   336  3.94  3.96  2.48
+##  7 0.24  Very Good I     VVS1     62.3    57   336  3.95  3.98  2.47
+##  8 0.26  Very Good H     SI1      61.9    55   337  4.07  4.11  2.53
+##  9 0.22  Fair      E     VS2      65.1    61   337  3.87  3.78  2.49
+## 10 0.23  Very Good H     VS1      59.4    61   338  4     4.05  2.39
+## # ... with 53,930 more rows</code></pre>
+<p>As we can see, there are three columns of factors in the data set (<code>ord</code> is just an ordered factor) - <code>cut</code>, <code>color</code>, and <code>clarity</code>. If you weren’t using scoped verbs, then you would convert them with something like this.</p>
+<pre class="r"><code>diamonds %&gt;% 
+  mutate(
+    cut = as.character(cut),
+    color = as.character(color),
+    clarity = as.character(clarity)
+  )</code></pre>
+<pre><code>## # A tibble: 53,940 x 10
+##    carat cut       color clarity depth table price     x     y     z
+##    &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 0.23  Ideal     E     SI2      61.5    55   326  3.95  3.98  2.43
+##  2 0.21  Premium   E     SI1      59.8    61   326  3.89  3.84  2.31
+##  3 0.23  Good      E     VS1      56.9    65   327  4.05  4.07  2.31
+##  4 0.290 Premium   I     VS2      62.4    58   334  4.2   4.23  2.63
+##  5 0.31  Good      J     SI2      63.3    58   335  4.34  4.35  2.75
+##  6 0.24  Very Good J     VVS2     62.8    57   336  3.94  3.96  2.48
+##  7 0.24  Very Good I     VVS1     62.3    57   336  3.95  3.98  2.47
+##  8 0.26  Very Good H     SI1      61.9    55   337  4.07  4.11  2.53
+##  9 0.22  Fair      E     VS2      65.1    61   337  3.87  3.78  2.49
+## 10 0.23  Very Good H     VS1      59.4    61   338  4     4.05  2.39
+## # ... with 53,930 more rows</code></pre>
+<p>While this certainly works, it is easy to see how this method can get out of hand rather quickly. Now with the scoped variant, it is much cleaner. You have to pass a predicate function that will return <code>TRUE</code> or <code>FALSE</code> for the column (e.g. <code>is.factor</code>) and then it will apply the function (e.g. <code>as.character</code>) to all columns that return <code>TRUE</code> from the predicate.</p>
+<pre class="r"><code>diamonds %&gt;% 
+  mutate_if(is.factor, as.character)</code></pre>
+<pre><code>## # A tibble: 53,940 x 10
+##    carat cut       color clarity depth table price     x     y     z
+##    &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 0.23  Ideal     E     SI2      61.5    55   326  3.95  3.98  2.43
+##  2 0.21  Premium   E     SI1      59.8    61   326  3.89  3.84  2.31
+##  3 0.23  Good      E     VS1      56.9    65   327  4.05  4.07  2.31
+##  4 0.290 Premium   I     VS2      62.4    58   334  4.2   4.23  2.63
+##  5 0.31  Good      J     SI2      63.3    58   335  4.34  4.35  2.75
+##  6 0.24  Very Good J     VVS2     62.8    57   336  3.94  3.96  2.48
+##  7 0.24  Very Good I     VVS1     62.3    57   336  3.95  3.98  2.47
+##  8 0.26  Very Good H     SI1      61.9    55   337  4.07  4.11  2.53
+##  9 0.22  Fair      E     VS2      65.1    61   337  3.87  3.78  2.49
+## 10 0.23  Very Good H     VS1      59.4    61   338  4     4.05  2.39
+## # ... with 53,930 more rows</code></pre>
+<p>The conversion of factors (and other datatypes) is probably the thing I use <code>mutate_if</code> for the most, but you can use it for anything that has to be applied to all columns that meet certain conditions. If we wanted to add 10% of the mean of each numeric column to every value in that column (this is not practical, but just as an illustration) you could do the following.</p>
+<pre class="r"><code>diamonds %&gt;% 
+  mutate_if(is.numeric, list(~.+0.1*mean(., na.rm = TRUE)))</code></pre>
+<pre><code>## # A tibble: 53,940 x 10
+##    carat cut       color clarity depth table price     x     y     z
+##    &lt;dbl&gt; &lt;ord&gt;     &lt;ord&gt; &lt;ord&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 0.310 Ideal     E     SI2      67.7  60.7  719.  4.52  4.55  2.78
+##  2 0.290 Premium   E     SI1      66.0  66.7  719.  4.46  4.41  2.66
+##  3 0.310 Good      E     VS1      63.1  70.7  720.  4.62  4.64  2.66
+##  4 0.370 Premium   I     VS2      68.6  63.7  727.  4.77  4.80  2.98
+##  5 0.390 Good      J     SI2      69.5  63.7  728.  4.91  4.92  3.10
+##  6 0.320 Very Good J     VVS2     69.0  62.7  729.  4.51  4.53  2.83
+##  7 0.320 Very Good I     VVS1     68.5  62.7  729.  4.52  4.55  2.82
+##  8 0.340 Very Good H     SI1      68.1  60.7  730.  4.64  4.68  2.88
+##  9 0.300 Fair      E     VS2      71.3  66.7  730.  4.44  4.35  2.84
+## 10 0.310 Very Good H     VS1      65.6  66.7  731.  4.57  4.62  2.74
+## # ... with 53,930 more rows</code></pre>
+<p><strong>NOTE:</strong> The notations for passing either anonymous functions (such as above) or multiple functions has changed in the release of <code>dplyr 0.8.0</code>. Previously the above code would read <code>mutate_if(is.numeric, funs(.+0.1*mean(., na.rm=TRUE)))</code>. The <code>funs</code> function has been soft deprecated in the new release. This means that it can still be used but the newer implementation should be used as it will either no longer be supported or will be removed later. Running the <code>mutate_if</code> call with <code>funs</code> results in the following warning message:</p>
+<pre><code>Warning message:
+funs() is soft deprecated as of dplyr 0.8.0
+please use list() instead
+# Before:
+funs(name = f(.)
+# After: 
+list(name = ~f(.))
+This warning is displayed once per session.</code></pre>
+<p>In this example, the original columns are modified to represent the new value. If you wanted to create new columns for all of the columns that this predicate function applies to, you can give the function a name in our list. The name of the function is appended to the name of every column that it applies to with a <code>_</code> as a separator.</p>
+<pre class="r"><code>diamonds %&gt;% 
+  mutate_if(is.numeric, list(&quot;new&quot; = ~.+0.1*mean(., na.rm = TRUE)))</code></pre>
+<pre><code>## # A tibble: 53,940 x 17
+##    carat cut   color clarity depth table price     x     y     z carat_new
+##    &lt;dbl&gt; &lt;ord&gt; &lt;ord&gt; &lt;ord&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;
+##  1 0.23  Ideal E     SI2      61.5    55   326  3.95  3.98  2.43     0.310
+##  2 0.21  Prem~ E     SI1      59.8    61   326  3.89  3.84  2.31     0.290
+##  3 0.23  Good  E     VS1      56.9    65   327  4.05  4.07  2.31     0.310
+##  4 0.290 Prem~ I     VS2      62.4    58   334  4.2   4.23  2.63     0.370
+##  5 0.31  Good  J     SI2      63.3    58   335  4.34  4.35  2.75     0.390
+##  6 0.24  Very~ J     VVS2     62.8    57   336  3.94  3.96  2.48     0.320
+##  7 0.24  Very~ I     VVS1     62.3    57   336  3.95  3.98  2.47     0.320
+##  8 0.26  Very~ H     SI1      61.9    55   337  4.07  4.11  2.53     0.340
+##  9 0.22  Fair  E     VS2      65.1    61   337  3.87  3.78  2.49     0.300
+## 10 0.23  Very~ H     VS1      59.4    61   338  4     4.05  2.39     0.310
+## # ... with 53,930 more rows, and 6 more variables: depth_new &lt;dbl&gt;,
+## #   table_new &lt;dbl&gt;, price_new &lt;dbl&gt;, x_new &lt;dbl&gt;, y_new &lt;dbl&gt;,
+## #   z_new &lt;dbl&gt;</code></pre>
+<p>Similar to <code>mutate_if</code>, <code>summarize_if</code>/<code>summarise_if</code> works by allowing you to select all the columns that meet a certain condition and summarizing those columns with a given function. It should be noted that in this case, just as with <code>summarize</code>, a function has to be provided that will return only a single value. If you would like to see a way around that requirement, using <code>purrr</code> and scoped verbs, you can see <a href="https://tbradley1013.github.io/2018/10/01/calculating-quantiles-for-groups-with-dplyr-summarize-and-purrr-partial/">here</a>.</p>
+<p>Let’s see how <code>summarize_if</code> works:</p>
+<pre class="r"><code>diamonds %&gt;% 
+  summarize_if(is.numeric, list(&quot;mean&quot; = mean, &quot;median&quot; = median))</code></pre>
+<pre><code>## # A tibble: 1 x 14
+##   carat_mean depth_mean table_mean price_mean x_mean y_mean z_mean
+##        &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1      0.798       61.7       57.5      3933.   5.73   5.73   3.54
+## # ... with 7 more variables: carat_median &lt;dbl&gt;, depth_median &lt;dbl&gt;,
+## #   table_median &lt;dbl&gt;, price_median &lt;dbl&gt;, x_median &lt;dbl&gt;,
+## #   y_median &lt;dbl&gt;, z_median &lt;dbl&gt;</code></pre>
+<p>We can also create more custom predicates to be used for our <code>_if</code> functions. Let’s create one that returns whether a column is numeric and has at least one value higher than 50.</p>
+<pre class="r"><code>higher_fifty &lt;- function(x){
+  if (is.numeric(x)){
+    return(any(x &gt; 50))
+  } else {
+    return(FALSE)
+  }
+}
+
+
+diamonds %&gt;% 
+  summarize_if(higher_fifty, list(&quot;mean&quot; = mean))</code></pre>
+<pre><code>## # A tibble: 1 x 4
+##   depth_mean table_mean price_mean y_mean
+##        &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+## 1       61.7       57.5      3933.   5.73</code></pre>
+<p>Another useful <code>_if</code> variant is <code>select_if</code>. You may want to select all of the numeric columns in the <code>diamonds</code> data set for further analysis, and <code>select_if</code> is perfect for this case. The implementation is the same as <code>mutate_if</code> and <code>summarize_if</code>, just instead of specifying a function to apply to the selected columns, you only specify a predicate function.</p>
+<pre class="r"><code>diamonds %&gt;% 
+  select_if(is.numeric)</code></pre>
+<pre><code>## # A tibble: 53,940 x 7
+##    carat depth table price     x     y     z
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 0.23   61.5    55   326  3.95  3.98  2.43
+##  2 0.21   59.8    61   326  3.89  3.84  2.31
+##  3 0.23   56.9    65   327  4.05  4.07  2.31
+##  4 0.290  62.4    58   334  4.2   4.23  2.63
+##  5 0.31   63.3    58   335  4.34  4.35  2.75
+##  6 0.24   62.8    57   336  3.94  3.96  2.48
+##  7 0.24   62.3    57   336  3.95  3.98  2.47
+##  8 0.26   61.9    55   337  4.07  4.11  2.53
+##  9 0.22   65.1    61   337  3.87  3.78  2.49
+## 10 0.23   59.4    61   338  4     4.05  2.39
+## # ... with 53,930 more rows</code></pre>
+<p>The last scoped verb for the <code>_if</code> variants is <code>filter</code>. <code>filter_if</code> is slightly different than the rest of the <code>_if</code> variants, because in addition to operating on columns in the data frame based on a condition, it can also operate on the rows of the data frame based on a condition. This row-wise operation is handled by the <code>.vars_predicate</code> argument in the scoped <code>filter</code> verbs. This argument is used in conjunction with the helper predicate functions <code>all_vars</code> and <code>any_vars</code>.</p>
+<p>For this example, we will use the <code>sp500</code> data set from the <code>gt</code> package. Let’s say that we want to filter all of the rows that did not have a value of greater than $2000 for the entire day. We can do that like this.</p>
+<pre class="r"><code>gt::sp500 %&gt;% 
+  filter_if(is.numeric, all_vars(. &gt; 2000))</code></pre>
+<pre><code>## # A tibble: 249 x 7
+##    date        open  high   low close     volume adj_close
+##    &lt;date&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+##  1 2015-12-31 2061. 2063. 2044. 2044. 2655330000     2044.
+##  2 2015-12-30 2077. 2077. 2062. 2063. 2367430000     2063.
+##  3 2015-12-29 2061. 2082. 2061. 2078. 2542000000     2078.
+##  4 2015-12-28 2058. 2058. 2044. 2056. 2492510000     2056.
+##  5 2015-12-24 2064. 2067. 2059. 2061. 1411860000     2061.
+##  6 2015-12-23 2042. 2065. 2042. 2064. 3484090000     2064.
+##  7 2015-12-22 2023. 2043. 2020. 2039. 3520860000     2039.
+##  8 2015-12-21 2010. 2023. 2006. 2021. 3760280000     2021.
+##  9 2015-12-18 2041. 2041. 2005. 2006. 6683070000     2006.
+## 10 2015-12-17 2074. 2076. 2042. 2042. 4327390000     2042.
+## # ... with 239 more rows</code></pre>
+<p><code>all_vars</code> requires that all the columns returning <code>TRUE</code> from the predicate meet the filter requirements. Conversely, <code>any_vars</code> requires that only one of the columns meets the specified requirements.</p>
+</div>
+<div id="at" class="section level1">
+<h1><code>_at</code></h1>
+<p>Now we can take a look at another variant of the dplyr verbs that allows us to target specific columns, <code>_at</code>. These functions are super handy when you want to apply a function to numerous columns by name. For this example, lets use the ever useful <code>mtcars</code> data set with the row names moved to a column named <code>cars</code>. We will assign this modified tibble to <code>cars_tbl</code>.</p>
+<pre class="r"><code>cars_tbl &lt;- mtcars %&gt;% 
+  rownames_to_column(&quot;car&quot;) %&gt;% 
+  as_tibble()</code></pre>
+<p>Let’s say that we want to normalize the <code>mpg</code>, <code>hp</code>, and <code>drat</code> columns from zero to one. We can do that by writing a simple function and applying it to each column, like this.</p>
+<pre class="r"><code>norm_dat &lt;- function(x){
+  (x-min(x))/(max(x)-min(x))
+}
+
+cars_tbl %&gt;% 
+  mutate(
+    mpg = norm_dat(mpg),
+    hp = norm_dat(hp),
+    drat = norm_dat(drat)
+  )</code></pre>
+<pre><code>## # A tibble: 32 x 12
+##    car     mpg   cyl  disp     hp  drat    wt  qsec    vs    am  gear  carb
+##    &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 Mazd~ 0.451     6  160  0.205  0.525  2.62  16.5     0     1     4     4
+##  2 Mazd~ 0.451     6  160  0.205  0.525  2.88  17.0     0     1     4     4
+##  3 Dats~ 0.528     4  108  0.145  0.502  2.32  18.6     1     1     4     1
+##  4 Horn~ 0.468     6  258  0.205  0.147  3.22  19.4     1     0     3     1
+##  5 Horn~ 0.353     8  360  0.435  0.180  3.44  17.0     0     0     3     2
+##  6 Vali~ 0.328     6  225  0.187  0      3.46  20.2     1     0     3     1
+##  7 Dust~ 0.166     8  360  0.682  0.207  3.57  15.8     0     0     3     4
+##  8 Merc~ 0.596     4  147. 0.0353 0.429  3.19  20       1     0     4     2
+##  9 Merc~ 0.528     4  141. 0.152  0.535  3.15  22.9     1     0     4     2
+## 10 Merc~ 0.374     6  168. 0.251  0.535  3.44  18.3     1     0     4     4
+## # ... with 22 more rows</code></pre>
+<p>Just like with the previous example of converting factors to characters, this certainly works but can quickly become cumbersome when applying the same function to multiple columns in a data set. <code>mutate_at</code> allows you to specifically target columns to apply a function to.</p>
+<pre class="r"><code>cars_tbl%&gt;% 
+  mutate_at(vars(mpg, hp, drat), list(~norm_dat))</code></pre>
+<pre><code>## # A tibble: 32 x 12
+##    car     mpg   cyl  disp     hp  drat    wt  qsec    vs    am  gear  carb
+##    &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 Mazd~ 0.451     6  160  0.205  0.525  2.62  16.5     0     1     4     4
+##  2 Mazd~ 0.451     6  160  0.205  0.525  2.88  17.0     0     1     4     4
+##  3 Dats~ 0.528     4  108  0.145  0.502  2.32  18.6     1     1     4     1
+##  4 Horn~ 0.468     6  258  0.205  0.147  3.22  19.4     1     0     3     1
+##  5 Horn~ 0.353     8  360  0.435  0.180  3.44  17.0     0     0     3     2
+##  6 Vali~ 0.328     6  225  0.187  0      3.46  20.2     1     0     3     1
+##  7 Dust~ 0.166     8  360  0.682  0.207  3.57  15.8     0     0     3     4
+##  8 Merc~ 0.596     4  147. 0.0353 0.429  3.19  20       1     0     4     2
+##  9 Merc~ 0.528     4  141. 0.152  0.535  3.15  22.9     1     0     4     2
+## 10 Merc~ 0.374     6  168. 0.251  0.535  3.44  18.3     1     0     4     4
+## # ... with 22 more rows</code></pre>
+<p>We can see how handy this can become and how much time this can save you if you are repeating the same operation on numerous columns within a tibble. An second, but equally advantageous, use of <code>mutate_at</code> is the <em>deselection</em> of columns to which a function should be applied. Say that we want to apply our normalization function to every column except <code>car</code>, <code>vs</code> and <code>am</code>, since they are binary columns. To do this we would use the same methods as your would if you were removing a column with <code>select</code>.</p>
+<pre class="r"><code>cars_tbl %&gt;% 
+  mutate_at(vars(-c(car, vs, am)), list(~norm_dat))</code></pre>
+<pre><code>## # A tibble: 32 x 12
+##    car     mpg   cyl   disp     hp  drat    wt  qsec    vs    am  gear
+##    &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+##  1 Mazd~ 0.451   0.5 0.222  0.205  0.525 0.283 0.233     0     1   0.5
+##  2 Mazd~ 0.451   0.5 0.222  0.205  0.525 0.348 0.3       0     1   0.5
+##  3 Dats~ 0.528   0   0.0920 0.145  0.502 0.206 0.489     1     1   0.5
+##  4 Horn~ 0.468   0.5 0.466  0.205  0.147 0.435 0.588     1     0   0  
+##  5 Horn~ 0.353   1   0.721  0.435  0.180 0.493 0.3       0     0   0  
+##  6 Vali~ 0.328   0.5 0.384  0.187  0     0.498 0.681     1     0   0  
+##  7 Dust~ 0.166   1   0.721  0.682  0.207 0.526 0.160     0     0   0  
+##  8 Merc~ 0.596   0   0.189  0.0353 0.429 0.429 0.655     1     0   0.5
+##  9 Merc~ 0.528   0   0.174  0.152  0.535 0.419 1         1     0   0.5
+## 10 Merc~ 0.374   0.5 0.241  0.251  0.535 0.493 0.452     1     0   0.5
+## # ... with 22 more rows, and 1 more variable: carb &lt;dbl&gt;</code></pre>
+<p>Now let’s say that we want to get the mean, sd, median, and count of all values greater than the mean for the <code>mpg</code>, <code>hp</code>, and <code>drat</code> columns. We can do that using the <code>summarize_at</code> function.</p>
+<pre class="r"><code>cars_summary &lt;- cars_tbl %&gt;% 
+  summarize_at(vars(mpg, hp, drat), list(&quot;mean&quot; = mean, &quot;sd&quot; = sd, &quot;median&quot; = median, &quot;n_higher_half&quot; = ~sum(. &gt; mean(.))))
+
+cars_summary</code></pre>
+<pre><code>## # A tibble: 1 x 12
+##   mpg_mean hp_mean drat_mean mpg_sd hp_sd drat_sd mpg_median hp_median
+##      &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;
+## 1     20.1    147.      3.60   6.03  68.6   0.535       19.2       123
+## # ... with 4 more variables: drat_median &lt;dbl&gt;, mpg_n_higher_half &lt;int&gt;,
+## #   hp_n_higher_half &lt;int&gt;, drat_n_higher_half &lt;int&gt;</code></pre>
+<p>The above example demonstrates how you can simply pass a function name to be applied to the column, and how you can pass slightly more complex functions to the <code>.funs</code> argument using <code>.</code> notation.</p>
+</div>
+<div id="all" class="section level1">
+<h1><code>_all</code></h1>
+<p>The <code>_all</code> variant works similarly to the other two, just now we are by default targeting <em>all</em> of the columns in the data frame. This can be extremely useful if you want to perform transformations on all of the columns in your data set or get summary variables for all of the columns. One place this may be useful is if you are fitting multivariate models and want to normalize all of your variables. Let’s show how these functions work with a quick example of both <code>mutate_all</code> and <code>summarize_all</code>.</p>
+<p>First, if we want to normalize all of the columns in a data set, we can do that by applying the <code>norm_dat</code> function defined above with <code>mutate_all</code>. Let’s see what this looks like using the <code>USArrests</code> data set.</p>
+<pre class="r"><code>USArrests %&gt;%
+  mutate_all(norm_dat)</code></pre>
+<pre><code>##        Murder     Assault  UrbanPop       Rape
+## 1  0.74698795 0.654109589 0.4406780 0.35917313
+## 2  0.55421687 0.746575342 0.2711864 0.96124031
+## 3  0.43975904 0.852739726 0.8135593 0.61240310
+## 4  0.48192771 0.496575342 0.3050847 0.31524548
+## 5  0.49397590 0.791095890 1.0000000 0.86046512
+## 6  0.42771084 0.544520548 0.7796610 0.81136951
+## 7  0.15060241 0.222602740 0.7627119 0.09819121
+## 8  0.30722892 0.660958904 0.6779661 0.21963824
+## 9  0.87951807 0.993150685 0.8135593 0.63565891
+## 10 1.00000000 0.568493151 0.4745763 0.47803618
+## 11 0.27108434 0.003424658 0.8644068 0.33333333
+## 12 0.10843373 0.256849315 0.3728814 0.17829457
+## 13 0.57831325 0.698630137 0.8644068 0.43152455
+## 14 0.38554217 0.232876712 0.5593220 0.35400517
+## 15 0.08433735 0.037671233 0.4237288 0.10335917
+## 16 0.31325301 0.239726027 0.5762712 0.27648579
+## 17 0.53614458 0.219178082 0.3389831 0.23255814
+## 18 0.87951807 0.698630137 0.5762712 0.38501292
+## 19 0.07831325 0.130136986 0.3220339 0.01291990
+## 20 0.63253012 0.873287671 0.5932203 0.52971576
+## 21 0.21686747 0.356164384 0.8983051 0.23255814
+## 22 0.68072289 0.719178082 0.7118644 0.71834625
+## 23 0.11445783 0.092465753 0.5762712 0.19638243
+## 24 0.92168675 0.732876712 0.2033898 0.25322997
+## 25 0.49397590 0.455479452 0.6440678 0.54005168
+## 26 0.31325301 0.219178082 0.3559322 0.23514212
+## 27 0.21084337 0.195205479 0.5084746 0.23772610
+## 28 0.68674699 0.708904110 0.8305085 1.00000000
+## 29 0.07831325 0.041095890 0.4067797 0.05684755
+## 30 0.39759036 0.390410959 0.9661017 0.29715762
+## 31 0.63855422 0.821917808 0.6440678 0.64082687
+## 32 0.62048193 0.715753425 0.9152542 0.48578811
+## 33 0.73493976 1.000000000 0.2203390 0.22739018
+## 34 0.00000000 0.000000000 0.2033898 0.00000000
+## 35 0.39156627 0.256849315 0.7288136 0.36434109
+## 36 0.34939759 0.363013699 0.6101695 0.32816537
+## 37 0.24698795 0.390410959 0.5932203 0.56847545
+## 38 0.33132530 0.208904110 0.6779661 0.19638243
+## 39 0.15662651 0.441780822 0.9322034 0.02583979
+## 40 0.81927711 0.801369863 0.2711864 0.39276486
+## 41 0.18072289 0.140410959 0.2203390 0.14211886
+## 42 0.74698795 0.489726027 0.4576271 0.50645995
+## 43 0.71686747 0.534246575 0.8135593 0.47028424
+## 44 0.14457831 0.256849315 0.8135593 0.40310078
+## 45 0.08433735 0.010273973 0.0000000 0.10077519
+## 46 0.46385542 0.380136986 0.5254237 0.34625323
+## 47 0.19277108 0.342465753 0.6949153 0.48837209
+## 48 0.29518072 0.123287671 0.1186441 0.05167959
+## 49 0.10843373 0.027397260 0.5762712 0.09043928
+## 50 0.36144578 0.397260274 0.4745763 0.21447028</code></pre>
+<p>It is that easy! We can also create new names for the mutated columns in the same manner that was shown in the <code>_if</code> section.</p>
+<pre class="r"><code>USArrests %&gt;% 
+  mutate_all(list(&quot;norm&quot; = norm_dat))</code></pre>
+<pre><code>##    Murder Assault UrbanPop Rape Murder_norm Assault_norm UrbanPop_norm
+## 1    13.2     236       58 21.2  0.74698795  0.654109589     0.4406780
+## 2    10.0     263       48 44.5  0.55421687  0.746575342     0.2711864
+## 3     8.1     294       80 31.0  0.43975904  0.852739726     0.8135593
+## 4     8.8     190       50 19.5  0.48192771  0.496575342     0.3050847
+## 5     9.0     276       91 40.6  0.49397590  0.791095890     1.0000000
+## 6     7.9     204       78 38.7  0.42771084  0.544520548     0.7796610
+## 7     3.3     110       77 11.1  0.15060241  0.222602740     0.7627119
+## 8     5.9     238       72 15.8  0.30722892  0.660958904     0.6779661
+## 9    15.4     335       80 31.9  0.87951807  0.993150685     0.8135593
+## 10   17.4     211       60 25.8  1.00000000  0.568493151     0.4745763
+## 11    5.3      46       83 20.2  0.27108434  0.003424658     0.8644068
+## 12    2.6     120       54 14.2  0.10843373  0.256849315     0.3728814
+## 13   10.4     249       83 24.0  0.57831325  0.698630137     0.8644068
+## 14    7.2     113       65 21.0  0.38554217  0.232876712     0.5593220
+## 15    2.2      56       57 11.3  0.08433735  0.037671233     0.4237288
+## 16    6.0     115       66 18.0  0.31325301  0.239726027     0.5762712
+## 17    9.7     109       52 16.3  0.53614458  0.219178082     0.3389831
+## 18   15.4     249       66 22.2  0.87951807  0.698630137     0.5762712
+## 19    2.1      83       51  7.8  0.07831325  0.130136986     0.3220339
+## 20   11.3     300       67 27.8  0.63253012  0.873287671     0.5932203
+## 21    4.4     149       85 16.3  0.21686747  0.356164384     0.8983051
+## 22   12.1     255       74 35.1  0.68072289  0.719178082     0.7118644
+## 23    2.7      72       66 14.9  0.11445783  0.092465753     0.5762712
+## 24   16.1     259       44 17.1  0.92168675  0.732876712     0.2033898
+## 25    9.0     178       70 28.2  0.49397590  0.455479452     0.6440678
+## 26    6.0     109       53 16.4  0.31325301  0.219178082     0.3559322
+## 27    4.3     102       62 16.5  0.21084337  0.195205479     0.5084746
+## 28   12.2     252       81 46.0  0.68674699  0.708904110     0.8305085
+## 29    2.1      57       56  9.5  0.07831325  0.041095890     0.4067797
+## 30    7.4     159       89 18.8  0.39759036  0.390410959     0.9661017
+## 31   11.4     285       70 32.1  0.63855422  0.821917808     0.6440678
+## 32   11.1     254       86 26.1  0.62048193  0.715753425     0.9152542
+## 33   13.0     337       45 16.1  0.73493976  1.000000000     0.2203390
+## 34    0.8      45       44  7.3  0.00000000  0.000000000     0.2033898
+## 35    7.3     120       75 21.4  0.39156627  0.256849315     0.7288136
+## 36    6.6     151       68 20.0  0.34939759  0.363013699     0.6101695
+## 37    4.9     159       67 29.3  0.24698795  0.390410959     0.5932203
+## 38    6.3     106       72 14.9  0.33132530  0.208904110     0.6779661
+## 39    3.4     174       87  8.3  0.15662651  0.441780822     0.9322034
+## 40   14.4     279       48 22.5  0.81927711  0.801369863     0.2711864
+## 41    3.8      86       45 12.8  0.18072289  0.140410959     0.2203390
+## 42   13.2     188       59 26.9  0.74698795  0.489726027     0.4576271
+## 43   12.7     201       80 25.5  0.71686747  0.534246575     0.8135593
+## 44    3.2     120       80 22.9  0.14457831  0.256849315     0.8135593
+## 45    2.2      48       32 11.2  0.08433735  0.010273973     0.0000000
+## 46    8.5     156       63 20.7  0.46385542  0.380136986     0.5254237
+## 47    4.0     145       73 26.2  0.19277108  0.342465753     0.6949153
+## 48    5.7      81       39  9.3  0.29518072  0.123287671     0.1186441
+## 49    2.6      53       66 10.8  0.10843373  0.027397260     0.5762712
+## 50    6.8     161       60 15.6  0.36144578  0.397260274     0.4745763
+##     Rape_norm
+## 1  0.35917313
+## 2  0.96124031
+## 3  0.61240310
+## 4  0.31524548
+## 5  0.86046512
+## 6  0.81136951
+## 7  0.09819121
+## 8  0.21963824
+## 9  0.63565891
+## 10 0.47803618
+## 11 0.33333333
+## 12 0.17829457
+## 13 0.43152455
+## 14 0.35400517
+## 15 0.10335917
+## 16 0.27648579
+## 17 0.23255814
+## 18 0.38501292
+## 19 0.01291990
+## 20 0.52971576
+## 21 0.23255814
+## 22 0.71834625
+## 23 0.19638243
+## 24 0.25322997
+## 25 0.54005168
+## 26 0.23514212
+## 27 0.23772610
+## 28 1.00000000
+## 29 0.05684755
+## 30 0.29715762
+## 31 0.64082687
+## 32 0.48578811
+## 33 0.22739018
+## 34 0.00000000
+## 35 0.36434109
+## 36 0.32816537
+## 37 0.56847545
+## 38 0.19638243
+## 39 0.02583979
+## 40 0.39276486
+## 41 0.14211886
+## 42 0.50645995
+## 43 0.47028424
+## 44 0.40310078
+## 45 0.10077519
+## 46 0.34625323
+## 47 0.48837209
+## 48 0.05167959
+## 49 0.09043928
+## 50 0.21447028</code></pre>
+<p>Now, if we wanted to summarize all of these columns, it would look like this.</p>
+<pre class="r"><code>USArrests %&gt;% 
+  summarize_all(list(mean = mean, median = median))</code></pre>
+<pre><code>##   Murder_mean Assault_mean UrbanPop_mean Rape_mean Murder_median
+## 1       7.788       170.76         65.54    21.232          7.25
+##   Assault_median UrbanPop_median Rape_median
+## 1            159              66        20.1</code></pre>
+<p>Again, it is that easy!</p>
+<p>Now, since the implementation is fairly similar to the other scoped variables, I won’t belabor the point. Instead, I will leave you will one other useful tool from the <code>_all</code> variants that I find helpful. Ordinarily, I prefer to work with my variable names in snake case. Luckily, the <code>janitor</code> package provides a <em>great</em> function, <code>clean_names</code>, to convert column names to all kinds of formats, snake case included. However, I find that when I want to share data with people not working in R, such as my manager, she does not want to see column names in snake case. Unfortunately, as far as I know, there is not a simply function, at this point, to convert R friendly column names back to title case. To accomplish this easily, I use the <code>rename_all</code> function. Let me know you an example with the <code>iris</code> data set after I have converted it to snake case with <code>janitor::clean_names</code>.</p>
+<pre class="r"><code>iris_tbl &lt;- iris %&gt;% 
+  as_tibble() %&gt;% 
+  janitor::clean_names()
+
+iris_tbl</code></pre>
+<pre><code>## # A tibble: 150 x 5
+##    sepal_length sepal_width petal_length petal_width species
+##           &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
+##  1          5.1         3.5          1.4         0.2 setosa 
+##  2          4.9         3            1.4         0.2 setosa 
+##  3          4.7         3.2          1.3         0.2 setosa 
+##  4          4.6         3.1          1.5         0.2 setosa 
+##  5          5           3.6          1.4         0.2 setosa 
+##  6          5.4         3.9          1.7         0.4 setosa 
+##  7          4.6         3.4          1.4         0.3 setosa 
+##  8          5           3.4          1.5         0.2 setosa 
+##  9          4.4         2.9          1.4         0.2 setosa 
+## 10          4.9         3.1          1.5         0.1 setosa 
+## # ... with 140 more rows</code></pre>
+<p>As you can see, now the names are super R-friendly. However, we want them to be converted back to title case without the underscores. Let’s see how that can be done.</p>
+<pre class="r"><code>iris_tbl %&gt;% 
+  rename_all(list(~stringr::str_to_title(stringr::str_replace(., &quot;_&quot;, &quot; &quot;)))) %&gt;% 
+  head() %&gt;% 
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Sepal Length</th>
+<th align="right">Sepal Width</th>
+<th align="right">Petal Length</th>
+<th align="right">Petal Width</th>
+<th align="left">Species</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">5.1</td>
+<td align="right">3.5</td>
+<td align="right">1.4</td>
+<td align="right">0.2</td>
+<td align="left">setosa</td>
+</tr>
+<tr class="even">
+<td align="right">4.9</td>
+<td align="right">3.0</td>
+<td align="right">1.4</td>
+<td align="right">0.2</td>
+<td align="left">setosa</td>
+</tr>
+<tr class="odd">
+<td align="right">4.7</td>
+<td align="right">3.2</td>
+<td align="right">1.3</td>
+<td align="right">0.2</td>
+<td align="left">setosa</td>
+</tr>
+<tr class="even">
+<td align="right">4.6</td>
+<td align="right">3.1</td>
+<td align="right">1.5</td>
+<td align="right">0.2</td>
+<td align="left">setosa</td>
+</tr>
+<tr class="odd">
+<td align="right">5.0</td>
+<td align="right">3.6</td>
+<td align="right">1.4</td>
+<td align="right">0.2</td>
+<td align="left">setosa</td>
+</tr>
+<tr class="even">
+<td align="right">5.4</td>
+<td align="right">3.9</td>
+<td align="right">1.7</td>
+<td align="right">0.4</td>
+<td align="left">setosa</td>
+</tr>
+</tbody>
+</table>
+<p>This, in my opinion, looks much nicer in a table that you are distributing outside of the R world.</p>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>The scoped verbs in the <code>dplyr</code> package are just one more example of why this package is so useful. These functions allow you to apply other functions to your data set across numerous columns without repeating yourself and have the potential to greatly speed up your workflow and reduce the amount of typing that is required if you start to use them in your code.</p>
+<p>This post by no means covers all of the scoped verbs that are available, but rather just gives you a taste of how you implement different versions of them. If you have any questions or comments, please share them below!</p>
+</div>
