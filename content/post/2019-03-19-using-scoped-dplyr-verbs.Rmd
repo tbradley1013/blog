@@ -1,0 +1,269 @@
+---
+title: 'Using Scoped dplyr verbs '
+author: Tyler Bradley
+date: '2019-03-19'
+slug: using-scoped-dplyr-verbs
+categories:
+  - R
+tags:
+  - dplyr
+  - rstats
+  - tidyverse
+description: ''
+topics: []
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = TRUE
+)
+
+```
+
+# Introduction
+
+Over the past several months, I have really started to increase the amount that I have been using scoped `dplyr` verbs. For those of you who don't know about these functions, they are handy varients to the normal `dplyr` verbs, such as `filter`, `mutate`, and `summarize`, that allow you to target multiple columns or all of your columns. These functions allow for you to save yourself time and typing when you want to apply either one or multiple functions to more than one column, a group of columns, or to all of your columns. This post will walk through a few of the ones I use on a regular basis and how I use them!
+
+These scoped verbs typically come in three different flavors:
+
+  * `_at` - This allows you to target specific columns by name
+  * `_if` - This allows you to target all columns that mean a specific condition
+  * `_all` - As the name implies, this will apply a function to every column of the dataset
+  
+  
+Before we get started, let's go ahead and load the libraries we will be using. 
+  
+```{r load-libs}
+library(dplyr)
+library(ggplot2)
+library(tibble)
+```
+
+
+## `_if`
+
+Let's first take a look at `mutate_if` by looking at an example where we want to convert factors to character variables. The dataset we will be using for this example is `diamonds` in the `ggplot2` package.
+
+```{r diamonds}
+diamonds
+```
+
+
+As we can see, there are three columns of factors in the dataset (`ord` is just an ordered factor) - `cut`, `color`, and `clarity`. If you weren't using scoped verbs, then you would convert them with something like this. 
+
+```{r}
+diamonds %>% 
+  mutate(
+    cut = as.character(cut),
+    color = as.character(color),
+    clarity = as.character(clarity)
+  )
+
+```
+
+While this certainly works, it is easy to see how this method can get out of hand rather quickly. Now with the scoped variant, it is much cleaner. You have to pass a predicate function that will return `TRUE` or `FALSE` for the column (e.g. `is.factor`) and then it will apply the function (e.g. `as.character`) to all columns that return `TRUE` from the predicate. 
+
+```{r}
+diamonds %>% 
+  mutate_if(is.factor, as.character)
+```
+
+
+The conversion of factors (and other datatypes) is probably the thing I use `mutate_if` for the most, but you can use it for anything that has to be applied to all columns that meet certain conditions. If we wanted to add 10% of the mean of each numeric column to every value in that column (this is not practicle, but just as an illustration) you could do the following.
+
+```{r}
+diamonds %>% 
+  mutate_if(is.numeric, list(~.+0.1*mean(., na.rm = TRUE)))
+
+```
+
+**NOTE:** The notations for passing either anonymous functions (such as above) or multiple functions has changed in the release of `dplyr 0.8.0`. Previously the above code would read `mutate_if(is.numeric, funs(.+0.1*mean(., na.rm=TRUE)))`. The `funs` function has been soft deprecated in the new release. This means that it can still be used but the newer implementation should be used as it will either no longer be supported or will be removed later. Running the `mutate_if` call with `funs` results in the following warning message:
+
+>Warning message:
+>funs() is soft deprecated as of dplyr 0.8.0
+>please use list() instead
+>
+># Before:
+>funs(name = f(.)
+>
+># After: 
+>list(name = ~f(.))
+>This warning is displayed once per session. 
+
+In this example, the original columns are modified to represent the new value. If you wanted to create new columns for all of the columns that this predicate function applies to, you can give the function a name in our list. The name of the function is appended to the name of every column that it applies to with a `_` as a separator.
+
+```{r}
+diamonds %>% 
+  mutate_if(is.numeric, list("new" = ~.+0.1*mean(., na.rm = TRUE)))
+
+```
+
+Similar to `mutate_if`, `summarize_if`/`summarise_if` works by allowing you to select all the columns that meet a certain condition and summarizing those columns with a given function. It should be noted that in this case, just as with `summarize`, a function has to be provided that will return only a single value. If you would like to see a way around that requirement, using `purrr` and scoped verbs, you can see [here](https://tbradley1013.github.io/2018/10/01/calculating-quantiles-for-groups-with-dplyr-summarize-and-purrr-partial/). 
+
+Let's see how `summarize_if` works:
+
+```{r}
+diamonds %>% 
+  summarize_if(is.numeric, list("mean" = mean, "median" = median))
+
+```
+
+We can also create more custum predicates to be used for our `_if` functions. Let's create one that returns whether a column is numeric and has at least one value higher than 50. 
+
+```{r}
+higher_fifty <- function(x){
+  if (is.numeric(x)){
+    return(any(x > 50))
+  } else {
+    return(FALSE)
+  }
+}
+
+
+diamonds %>% 
+  summarize_if(higher_fifty, list("mean" = mean))
+
+```
+
+
+Another useful `_if` variant is `select_if`. You may want to select all of the numeric columns in the `diamonds` dataset for further analysis, and `select_if` is perfect for this case. The implementation is the same as `mutate_if` and `summarize_if`, just instead of specifying a function to apply to the selected columns, you only specify a predicate function. 
+
+```{r}
+diamonds %>% 
+  select_if(is.numeric)
+
+```
+
+
+The last scoped verb for the `_if` variants is `filter`. `filter_if` is slightly different than the rest of the `_if` variants, because in addition to operating on columns in the dataframe based on a condition, it can also operate on the rows of the dataframe based on a condition. This rowwise operation is handled by the `.vars_predicate` argument in the scoped `filter` verbs. This argument is used in conjunction with the helper predicate functions `all_vars` and `any_vars`. 
+
+For this example, we will use the `sp500` dataset from the `gt` package. Let's say that we want to filter all of the rows that did not have a value of greater than $2000 for the entire day. We can do that like this.
+
+```{r}
+gt::sp500 %>% 
+  filter_if(is.numeric, all_vars(. > 2000))
+
+```
+
+`all_vars` requires that all the columns returning `TRUE` from the predicate meet the filter requirements. Conversely, `any_vars` requires that only one of the columns meets the specified requirements. 
+
+## `_at`
+
+Now we can take a look at another variant of the dplyr verbs that allows us to target specific columns, `_at`. These functions are super handy when you want to apply a function to numerous columns by name. For this example, lets use the ever useful `mtcars` dataset with the rownames moved to a column named `cars`. We will assign this modified tibble to `cars_tbl`. 
+
+
+```{r}
+cars_tbl <- mtcars %>% 
+  rownames_to_column("car")
+```
+
+
+Let's say that we want to normalize the `mpg`, `hp`, and `drat` columns from zero to one. We can do that by writing a simple function and applying it to each column, like this. 
+
+
+```{r}
+norm_dat <- function(x){
+  (x-min(x))/(max(x)-min(x))
+}
+
+cars_tbl %>% 
+  mutate(
+    mpg = norm_dat(mpg),
+    hp = norm_dat(hp),
+    drat = norm_dat(drat)
+  )
+
+```
+
+Just like with the previous example of converting factors to characters, this certainly works but can quickly become cumbersome when applying the same function to multiple columns in a dataset. `mutate_at` allows you to specificly target columns to apply a function to. 
+
+```{r}
+cars_tbl%>% 
+  mutate_at(vars(mpg, hp, drat), list(~norm_dat))
+```
+
+We can see how handy this can become and how much time this can save you if you are repeating the same operation on numerous columns within a tibble. An second, but equally advantageous, use of `mutate_at` is the *deselection* of columns to which a function should be applied. Say that we want to apply our normalization function to every column except `car`, `vs` and `am`, since they are binary columns. To do this we would use the same methods as your would if you were removing a column with `select`.
+
+```{r}
+cars_tbl %>% 
+  mutate_at(vars(-c(car, vs, am)), list(~norm_dat))
+
+```
+
+
+Now let's say that we want to get the mean, sd, median, and count of all values greater than the mean for the `mpg`, `hp`, and `drat` columns. We can do that using the `summarize_at` function. 
+
+
+```{r}
+cars_summary <- cars_tbl %>% 
+  summarize_at(vars(mpg, hp, drat), list("mean" = mean, "sd" = sd, "median" = median, "n_higher_half" = ~sum(. > mean(.))))
+
+cars_summary
+```
+
+The above example demonstrates how you can simply pass a function name to be applied to the column, and how you can pass slightly more complex functions to the `.funs` argument using `.` notation. 
+
+
+## `_all`
+
+The `_all` variant works similarly to the other two, just now we are by default targeting *all* of the columns in the dataframe. This can be extremely useful if you want to perform transformations on all of the columns in your dataset or get summary variables for all of the columns. One place this may be useful is if you are fitting multivariate models and want to normalize all of your variables. Let's show how these functions work with a quick example of both `mutate_all` and `summarize_all`.
+
+First, if we want to normalize all of the columns in a data set, we can do that by applying the `norm_dat` function defined above with `mutate_all`. Let's see what this looks like using the `USArrests` dataset. 
+
+```{r}
+USArrests %>%
+  mutate_all(norm_dat)
+
+```
+
+
+It is that easy! We can also create new names for the mutated columns in the same manner that was shown in the `_if` section. 
+
+
+```{r}
+USArrests %>% 
+  mutate_all(list("norm" = norm_dat))
+
+```
+
+
+Now, if we wanted to summarize all of these columns, it would look like this. 
+
+
+```{r}
+USArrests %>% 
+  summarize_all(list(mean = mean, median = median))
+
+```
+
+Again, it is that easy!
+
+Now, since the implementation is fairly similar to the other scoped variables, I won't belabor the point. Instead, I will leave you will one other useful tool from the `_all` variants that I find helpful. Ordinarily, I prefer to work with my variable names in snake case. Luckily, the `janitor` package provides a *great* function, `clean_names`, to convert column names to all kinds of formats, snake case included. However, I find that when I want to share data with people not working in R, such as my manager, she does not want to see column names in snake case. Unfortunately, as far as I know, there is not a simply function, at this point, to convert R friendly column names back to title case. To acomplish this easily, I use the `rename_all` function. Let me know you an example with the `iris` dataset after I have converted it to snake case with `janitor::clean_names`.
+
+```{r}
+iris_tbl <- iris %>% 
+  as_tibble() %>% 
+  janitor::clean_names()
+
+iris_tbl
+```
+
+As you can see, now the names are super R-friendly. However, we want them to be converted back to title case without the underscores. Let's see how that can be done. 
+
+```{r}
+iris_tbl %>% 
+  rename_all(list(~str_to_title(str_replace(., "_", " ")))) %>% 
+  head() %>% 
+  knitr::kable()
+
+```
+
+This, in my opinion, looks much nicer in a table that you are distributing outside of the R world. 
+
+
+# Conclusion
+
+The scoped verbs in the `dplyr` package are just one more example of why this package is so useful. These functions allow you to apply other functions to your dataset across numerous columns without repeating yourself and have the potential to greatly speed up your workflow and reduc the amount of typing that is required if you start to use them in your code. 
+
+This post by no means covers all of the scoped verbs that are available, but rather just gives you a taste of how you implement different versions of them. If you have any questions or comments, please share them below!
