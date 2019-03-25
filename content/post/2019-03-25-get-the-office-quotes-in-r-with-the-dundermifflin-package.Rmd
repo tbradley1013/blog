@@ -1,0 +1,122 @@
+---
+title: Get the Office Quotes in R with the dundermifflin Package
+author: Tyler Bradley
+date: '2019-03-25'
+slug: office-quotes-in-R-dundermifflin-package
+categories:
+  - R
+tags:
+  - rstats
+  - rpackage
+  - the-office
+description: ''
+topics: []
+---
+
+# Introduction
+
+I am happy to share a fun project I put together this weekend - a new R package called [`dundermifflin`](https://github.com/tbradley1013/dundermifflin). If you can't guess from the name, it will give you quotes from the Office whenever you want! This package was inspired by the [`goodshirt`](https://github.com/adam-gruer/goodshirt) package, which gives users quotes from The Good Place, I was able to great a similar package for the Office. By using [`theOffice-api`](https://github.com/anGie44/theOffice-api), I created a data set, `office_quotes`, that is shipped with the package, that has every line from the Office, with the exception of season 5. 
+
+I will try to keep this brief, because as in the words of Kevin:
+
+<iframe src="https://giphy.com/embed/nxuSlWOH2Cx1K" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/the-office-nxuSlWOH2Cx1K">via GIPHY</a></p>
+
+
+So let's dive right in!
+
+To install the packages you can use `remotes::install_github`:
+
+```
+remotes::install_github("tbradley1013/dundermifflin")
+```
+
+```{r, message = FALSE, warning=FALSE}
+library(dundermifflin)
+library(cowsay)
+library(magrittr)
+```
+
+
+# Getting quotes
+
+The implementation of this package is pretty straight forward. There main function of this package is `get_quote` and this will return a random quote from any season and episode in the show. By default the quotes are required to have a minimum of 10 words and a maximum of 100. This is to try to remove some of the meaningless lines from the show, but it will likely also miss some of the great one-liners. See the [Next Steps](#next-steps) section for how I hope to deal with this! This function also allows you to specify the season, episode number, episode name, scene number, or character name to narrow down the quotes you get. By default, only quotes by characters that are apart of the main office staff are included. Let's see how it works.
+
+```{r}
+get_quote()
+
+
+get_quote(season = 1)
+
+
+get_quote(character = "Michael")
+```
+
+
+By default, `get_quote` and all the other function variants, to be discussed in later sections, return an object of class `dunder`. This is just a `tbl` with info for one quote. This object can be passed to `as.character` and then used in conjunction with `cowsay::say`.
+
+```{r}
+get_quote() %>% 
+  as.character() %>% 
+  say()
+```
+
+
+# Quotes by Character
+
+While you can specify the character you wish to receive quotes from in the `get_quote` function. There are also functions for all of the main characters! Sorry if I missed any, but:
+
+<iframe src="https://giphy.com/embed/gQmyUokrbbSpy" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/the-office-sue-me-annoyed-gQmyUokrbbSpy">via GIPHY</a></p>
+
+
+The character functions are super straightforward. Any of the arguments, except `character`, for `get_quote` can be passed to them. Here are some examples:
+
+```{r}
+michael()
+
+jim()
+
+dwight()
+
+kevin()
+```
+
+
+# Quotes by Department
+
+You can also get quotes for entire departments. 
+
+```{r}
+sales()
+
+accounting()
+
+reception()
+```
+
+
+# That's what she said
+
+<iframe src="https://giphy.com/embed/5xtDarIX9MTLD1pMoXC" width="480" height="270" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/hero0fwar-the-office-michael-scott-thats-what-she-said-5xtDarIX9MTLD1pMoXC">via GIPHY</a></p>
+
+This one might be a little more taboo, but since it is a memorable running joke of the show, I created a function `she_said` that returns a random "That's what she said" joke from the office. This function will return the line before the joke and the line with the
+joke. 
+
+```{r}
+she_said()
+```
+
+
+# Start your day (read: R session) with the Office
+
+You can also add these functions to your `.Rprofile` so that you start every new R session with a quote from the office!
+
+![](/images/office-startup.png)
+
+
+# Next Steps {#next-steps}
+
+Currently, these functions will return a random quote from the *entire* show script that meet certain length requirements. While **a lot** of them are hysterical (I have run the function a lot and enjoyed it immensely), you will certainly get some quotes that are not.  Something I would like to do is create a separate data set that contains specific quotes that I (and you!) find especially funny, and you can help!. There is an argument in the `get_quote` function, `idx`, that can be set to `TRUE` that will return the "Quote Index". What you can do is use this argument and submit the quote, along with the index, to this [github issue](https://github.com/tbradley1013/dundermifflin/issues/1) as a comment. I will work periodically to add all of the funny ones to a new data set that will provide users with a more curated quote output to make sure you are always getting the funniest quotes possible! 
+
+
+
+
