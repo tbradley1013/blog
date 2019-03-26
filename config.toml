@@ -1,4 +1,4 @@
-baseurl = "/"
+baseurl = "https://tbradley1013.github.io/"
 languageCode = "en-us"
 title = "goonR blog"
 author = "Tyler Bradley"
@@ -8,7 +8,7 @@ paginate = 10
 ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
 plugins = "jekyll-seo-tag"
 publishDir = "../tbradley1013.github.io"
-
+rssLimit = 10
 
 [permalinks]
     post = "/:year/:month/:day/:slug/"
