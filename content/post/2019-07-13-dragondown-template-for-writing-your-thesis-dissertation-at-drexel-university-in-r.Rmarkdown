@@ -1,0 +1,67 @@
+---
+title: 'dragondown: A bookdown template for writing your thesis/dissertation at Drexel
+  University in R'
+author: Tyler Bradley
+date: '2019-07-13'
+slug: dragondown-thesis-dissertation-template-drexel-university
+categories:
+  - R
+tags:
+  - bookdown
+  - thesisdown
+  - gradschool
+description: ''
+topics: []
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+I am happy to introduce the [`dragondown`](https://github.com/tbradley1013/dragondown) R package. This package will allow for you to write your Drexel University Master's or PhD Thesis/Dissertation entirely in Rmarkdown without having to write it in LaTeX. This package is inspired by the [`thesisdown`](https://github.com/ismayc/thesisdown) package. 
+
+## Why should you use `dragondown`?
+
+Writing your thesis/dissertation is hard enough, and worrying about the formatting and how to integrate your results with your text can make it that much more difficult. Inspired by other examples, the `dragondown` package will allow you to create a Rmarkdown book that conforms to the requirements given in the [Drexel Thesis Manual](https://drexel.edu/~/media/Files/graduatecollege/forms/Thesis%20Manual.ashx?la=en). There are three main reasons why you should want to use this package to create your thesis/disseration:
+
+  1. Easily integrate your text with your analyses
+  2. Avoid having to work in raw LaTeX to include tables and figures in a clean format
+  3. REPRODUCIBILITY!!
+  
+### 1. Easily inegrate your text with your analyses. 
+
+R and Rmarkdown allows you to easily integrate text and your analyses (in the form of R, python, or SQL code). The `dragondown` package then provides the required templates so that when your knit your Rmarkdown (in this case a [`bookdown`](https://bookdown.org/)) project it will conform to Drexel's various requirements for the formatting of a thesis/dissertation. This is incredibly powerful, and can save you a lot of time when you are trying to put the finishing touches on your project. Instead of having to spend a crazy amount of time making sure that every figure and table meets the right requirements and your front matter and back matter all meet the requirements, the `dragondwon` package takes care of that for you. This will allow you to spend your time on what you really care about, your work! 
+
+For example, let's pretend that you have a dataset named `diamonds.csv` (credit to the [`ggplot2`](https://ggplot2.tidyverse.org/)) package. You can easily load it in your Rmarkdown file directly with your text in a code chunk like below:
+
+```{r}
+library(dplyr)
+library(readr)
+
+diamonds <- read_csv("dragondown-files/diamonds.csv")
+
+diamonds
+```
+
+
+Then you can include more code chunks that analyze the dataset, create production quality table and figures, or anything else and they are easily integrated with your text. 
+
+Are you a fan of python instead of R? No problem! With newer versions of RStudio and the [`reticulate`](https://rstudio.github.io/reticulate/) R package, you are able to [easily integrate python chunks directly into your Rmarkdown files](https://rstudio.github.io/reticulate/articles/r_markdown.html). 
+
+### 2. Avoid having to work in raw LaTeX
+
+Don't get me wrong, there are some people that LOVE LaTex... but if we are honest, those people are likely few and far between. From the people I have spoken too, the knowledge that has been past down for using LaTeX to create the required formatting for Drexel's dissertations is something that gets lost between generations of grad students. Luckily, thanks to the work of several former students in the Physics department (namely [W. Trevor King](https://github.com/wking)), there is a [drexel-thesis LaTeX class](https://github.com/DrexelPhysics/drexel-thesis). Now, you could certainly go about building this class on your local machine and writing your thesis in LaTeX, but you will still have to worry about organization and actually using LaTeX. The `dragondown` package includes a slightly modified of the `.cls` class file from `drexel-thesis` and a LaTeX template that allows you to completely avoid LaTeX if you want. 
+
+Just like in any Rmarkdown file being knit to a pdf, you can certainly add your own LaTeX on top of the template, but you only have to do this if you want! You can also modify the template yourself once you create your `dragondown` project. 
+
+### 3. REPRODUCIBILITY
+
+I am including this last, but in all honesty, this is by far the most important reason for why you should switch to using `dragondown` for your thesis. Using this package, or more specifically, R (or python) and Rmarkdown, will allow you to create a completely repoducible workflow!
+
+What does this mean? Simple, you can press one button and your whole dissertation is regenerated with any changes that you may have made. 
+
+**Did you find a mistake in your data?** No problem (assuming your conclusions didn't change of course)! You can make the change and simply re-knit your dissertation and all of your results, tables, and figures will be completely re-rendered without you having to go through the painful process of remaking them all one by one and then copying and pasting them back into your manuscript!
+
+**Did you decide you want to rearrange your chapters?** No Problem!! Simply edit your `_bookdown.yml` file to put them in the order that you want and re-knit!
+
+**Do you want to be able to 
