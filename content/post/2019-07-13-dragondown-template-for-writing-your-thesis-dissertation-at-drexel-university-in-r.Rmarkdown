@@ -37,7 +37,7 @@ remotes::install_github("rstudio/bookdown")
 remotes::install_github("tbradley1013/dragondown")
 ```
 
-Now you can create a thesis project easily from RStudio. Select `File -> New File -> R Markdown` from the menu. When the pop-up opens, select "template" from the left hand side and then find the "Drexel Thesis" option from the list, as shown here:
+Now you can create a thesis project easily from RStudio. Select `File -> New File -> R Markdown` from the menu. When the pop-up opens, select "From Template" from the left hand side and then find the "Drexel Thesis" option from the list, as shown here:
 
 ![](/images/dragondown/thesis_rmd.png)
 
@@ -49,14 +49,16 @@ Whenever you want to see what your current work looks like in the final format, 
 
 I recommend you look through some of the example chapters, as they demonstrate some of the capabilities of using `bookdown` to write your thesis. You can also see more functionality of the `bookdown` package [here](https://bookdown.org/)
 
-You can see how other components of the `dragondown` template works by reading through the [Components](https://github.com/tbradley1013/dragondown#components) section of the GitHub README. 
+You can see how other components of the `dragondown` template works by reading through the [Components](https://github.com/tbradley1013/dragondown#components) section of the GitHub README. You can see what the final product of the `dragondown` project looks like for the example thesis used in the template looks like [here](/dragondown_book/thesis.pdf).
 
 ### Thesis/Dissertation Approval Form
-One important feature unique to the `dragondown` template, is the ability to include the required thesis/dissertation approval form. This form for your committee members to sign that they have approved of your thesis. In the original `drexel-thesis` LaTeX class, this page was created in pure LaTeX. However, the form as been updated since its implementation and unfortunately, I am not a LaTeX expert. So in this project, the approval form is added using a saved version of the form from the `docs` folder of your thesis project. When you create a new thesis project, a blank approval form is used. However, you can replace the existing form with a filled out form if you wish. If you decide to do this, you can use the existing file name or you can specify a new name. Please note, that if you use a different file name, you will need to specify the file location in your `index.Rmd` file using the `approvalform` YAML parameter:
+One important feature unique to the `dragondown` template, is the ability to include the required [thesis/dissertation approval form](https://drexel.edu/~/media/Files/graduatecollege/forms/Graduate%20Thesis-Dissertation%20Approval%20Form%20and%20Signature%20Page.ashx?la=en). This form is for your committee members to sign that they have approved of your thesis. In the original `drexel-thesis` LaTeX class, this page was created in pure LaTeX. However, the form as been updated since its implementation and unfortunately, I am not a LaTeX expert. So in this project, the approval form is added using a saved version of the form from the `docs` folder of your thesis project. When you create a new thesis project, a blank approval form is used. However, you can replace the existing form with a filled out form if you wish. If you decide to do this, you can use the existing file name or you can specify a new name. Please note, that if you use a different file name, you will need to specify the file location in your `index.Rmd` file using the `approvalform` YAML parameter:
 
 ```
 approvalform: path/to/form.pdf
 ```
+
+If you wish to exlude the approval form from your thesis rendering, you will need to open the `template.tex` file and remove the `approvalform` option from the `\documentclass` option on the first line. 
 
 ## Why should you use `dragondown`?
 
@@ -108,3 +110,5 @@ In addition to the benefits that reproducibility provides for yourself, it also 
 ## Conclusion
 
 This package was generated to try and make the life of graduate students at Drexel University a little bit easier. While this package will not perform your research or write your thesis, hopefully it will allow you to not worry about the tedious task of meeting formatting guidelines and focus on the work you care about! If you have any questions and you find any issues with the package, feel free to file an issue at the [GitHub repo](https://github.com/tbradley1013/dragondown/issues). 
+
+I would like to thank both W. Trevor King and his collaborators for their work on the `drexel-thesis` LaTeX class, as without that, this project would not have happened. I would also like to thank Yihui Xie for creating `Rmarkdown` and `bookdown` and Chester Ismay for the creation of `thesisdown`, which this package is largely based on. Without all of this work, the `dragondown` project would not exist, so thank you!
