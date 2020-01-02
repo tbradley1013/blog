@@ -1,0 +1,158 @@
+---
+title: Analyzing My 2019 GitHub Usage in R
+author: Tyler Bradley
+date: '2020-01-02'
+slug: analyzing-my-2019-github-usage-in-r
+categories:
+  - R
+tags:
+  - github
+  - gh
+description: ''
+topics: []
+---
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  cache = TRUE
+)
+```
+
+# Introduction
+
+If you are anything like me, then you probably enjoy the contribution graphs that GitHub posts to both your own and others GitHub profile. You can see mine [here](https://github.com/tbradley1013). Since it is the beginning of a new year, I thought it would be fun to take a look back to see how I used GitHub in 2019 and in previous years. This is made much easier by using the [`gh`](https://github.com/r-lib/gh) R package which provides an R interface to the [GitHub API](https://developer.github.com/v3/). This post will walk through how to get all of the commits for your personal repos (so your results will look different from mine). The `gh` package will use the `GITHUB_PAT` environment variable to access any personal access token you have previously set up. If you do not have that configured, than you can provide your token with the `.token` argument.  
+
+```{r}
+library(tidyverse)
+library(gh)
+library(lubridate)
+library(glue)
+```
+
+We will also define a custom color palette based on the [GitHub Style Guide](https://primer.style/css/utilities/colors) to stick with the post's theme.
+
+```{r gh-theme}
+gh_pal <- c(blue = "#0366d6", yellow = "#ffd33d", red = "#d73a49", green = "#28a745", purple = "#6f42c1")
+```
+
+# Getting Repos
+
+First, we want to get a listing of all of the repos that are associated with my GitHub account. We can do this using the `/user/repos` API endpoint. 
+
+```{r}
+repos <- gh("/user/repos", .limit = Inf)
+```
+
+We can extract the desired information from the `repos` using the `map_chr` and `map_lgl` functions in the `purrr` package. 
+
+```{r}
+repo_info <- tibble(
+  owner = map_chr(repos, c("owner", "login")),
+  name = map_chr(repos, "name"),
+  full_name = map_chr(repos, "full_name"),
+  private = map_lgl(repos, "private")
+)
+
+# showing the first few non-private repos
+filter(repo_info, !private)
+```
+
+There is a lot of other information contained within the `repos` API response. However, since I will be focusing mainly on my commits, I don't need most of it for this purpose. 
+
+# Get and Parse Commits
+
+In order to get all of the commits for each of these repos, we will use the `map_dfr` to append all of the commit information for each repo into a single dataset. Before we do that, we need to define a few helper functions that can parse the output of the API endpoint response. 
+
+```{r parse-functions}
+null_list <- function(x){
+  map_chr(x, ~{ifelse(is.null(.x), NA, .x)})
+}
+
+parse_commit <- function(commits, repo){
+  # browser()
+  commit_by <- map(commits, c("commit", "author", "name"))
+  username <- map(commits, c("committer", "login"))
+  commit_time <- map(commits, c("commit", "author", "date"))
+  message <- map(commits, c("commit", "message"))
+  
+  out <- tibble(
+    repo = repo,
+    commit_by = null_list(commit_by),
+    username = null_list(username),
+    commit_time = null_list(commit_time),
+    message = null_list(message)
+  )
+  
+  out <- mutate(out, commit_time = as.POSIXct(commit_time, format = "%Y-%m-%dT%H:%M:%SZ"))
+  return(out)
+}
+
+gh_safe <- purrr::possibly(gh, otherwise = NULL)
+```
+
+The `parse_commit` function will extract the desired information from each API response. The `null_list` function is a simple helper to convert any NULL values in the response to NA, so that the `map` functions don't throw errors. Finally, the `gh_safe` function is a safe version of the `gh` function. This is defined in case any of the individual responses fail, it doesn't cause the entire loop to fail. 
+
+
+Now we can query all of the commits from each of these repos and filter the output to include only commits that I made. 
+
+```{r query-commits}
+all_commits <- map_dfr(repo_info$full_name, function(z){
+  name_split <- str_split(z, "/")
+  owner <- name_split[[1]][1]
+  repo <- name_split[[1]][2]
+  
+  repo_commits <- gh_safe("/repos/:owner/:repo/commits", owner = owner, repo = repo, .limit = Inf)
+  
+  out <- parse_commit(repo_commits, repo = z)
+  
+  return(out)
+})
+
+
+my_commits <- all_commits %>% 
+  filter(commit_by == "Tyler Bradley")
+
+my_commits
+```
+
+
+# Analyzing the results
+
+First, we can look at the overall number of commits I have made per year since I started using GitHub in 2017. Before we do that, we will add a few columns to the `my_commits` dataset to include grouping variables based on the commit date and time. We will also join the `repo_info` dataset to the `my_commits` dataset.
+
+```{r}
+my_commits <- my_commits %>% 
+  mutate(
+    date = date(commit_time),
+    wday = wday(date, label = TRUE),
+    year = year(date),
+    week = week(date)
+  ) %>% 
+  left_join(
+    repo_info, 
+    by = c("repo" = "full_name")
+  )
+```
+
+```{r commits-per-year, fig.width = 8, fig.height = 4}
+my_commits %>% 
+  count(year) %>% 
+  ggplot(aes(as.character(year), n)) + 
+  geom_col(fill = gh_pal["green"]) + 
+  geom_text(aes(y = (n-35), label = paste(n, "commits")), color = "white", fontface = "bold") + 
+  theme_bw() + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 2050)) + 
+  scale_x_discrete(expand = c(0.17, 0.17)) + 
+  labs(
+    title = "Commits by Tyler Bradley (tbradley1013) since joining GitHub by Year",
+    y = "Number of Commits"
+  ) + 
+  theme(
+    axis.title.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+
+```
