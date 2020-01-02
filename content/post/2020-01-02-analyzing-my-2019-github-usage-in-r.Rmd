@@ -6,6 +6,7 @@ slug: analyzing-my-2019-github-usage-in-r
 categories:
   - R
 tags:
+  - rstats
   - github
   - gh
 description: ''
@@ -112,7 +113,7 @@ all_commits <- map_dfr(repo_info$full_name, function(z){
 
 
 my_commits <- all_commits %>% 
-  filter(commit_by == "Tyler Bradley", year <= 2019) %>% 
+  filter(commit_by == "Tyler Bradley") %>% 
   mutate(commit_time = commit_time - hours(5))
 
 my_commits
@@ -134,7 +135,8 @@ my_commits <- my_commits %>%
   left_join(
     repo_info, 
     by = c("repo" = "full_name")
-  )
+  ) %>% 
+  filter(year <= 2019)
 ```
 
 ```{r commits-per-year, fig.width = 10, fig.height = 5}
