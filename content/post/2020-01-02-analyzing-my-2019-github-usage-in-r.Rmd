@@ -104,7 +104,10 @@ all_commits <- map_dfr(repo_info$full_name, function(z){
   owner <- name_split[[1]][1]
   repo <- name_split[[1]][2]
   
-  repo_commits <- gh_safe("/repos/:owner/:repo/commits", owner = owner, repo = repo, .limit = Inf)
+  repo_commits <- gh_safe("/repos/:owner/:repo/commits", owner = owner, 
+                          repo = repo, author = "tbradley1013",
+                          since = "2017-01-01T00:00:00Z",
+                          .limit = Inf)
   
   out <- parse_commit(repo_commits, repo = z)
   

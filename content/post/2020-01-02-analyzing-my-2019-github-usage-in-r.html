@@ -43,16 +43,16 @@ filter(repo_info, !private)</code></pre>
 ##    owner      name                  full_name                       private
 ##    &lt;chr&gt;      &lt;chr&gt;                 &lt;chr&gt;                           &lt;lgl&gt;  
 ##  1 saleslab   DWC                   saleslab/DWC                    FALSE  
-##  2 saleslab   ParsingLabSolutionsA~ saleslab/ParsingLabSolutionsAS~ FALSE  
-##  3 tbradley1~ adv-r                 tbradley1013/adv-r              FALSE  
-##  4 tbradley1~ aob-power             tbradley1013/aob-power          FALSE  
-##  5 tbradley1~ blog                  tbradley1013/blog               FALSE  
-##  6 tbradley1~ connectapi            tbradley1013/connectapi         FALSE  
-##  7 tbradley1~ critical-thinking-ev~ tbradley1013/critical-thinking~ FALSE  
-##  8 tbradley1~ dbp-calculator        tbradley1013/dbp-calculator     FALSE  
-##  9 tbradley1~ dragondown            tbradley1013/dragondown         FALSE  
-## 10 tbradley1~ dragondown_book       tbradley1013/dragondown_book    FALSE  
-## # ... with 25 more rows</code></pre>
+##  2 saleslab   ParsingLabSolutionsA… saleslab/ParsingLabSolutionsAS… FALSE  
+##  3 tbradley1… adv-r                 tbradley1013/adv-r              FALSE  
+##  4 tbradley1… aob-power             tbradley1013/aob-power          FALSE  
+##  5 tbradley1… blog                  tbradley1013/blog               FALSE  
+##  6 tbradley1… connectapi            tbradley1013/connectapi         FALSE  
+##  7 tbradley1… critical-thinking-ev… tbradley1013/critical-thinking… FALSE  
+##  8 tbradley1… dbp-calculator        tbradley1013/dbp-calculator     FALSE  
+##  9 tbradley1… dragondown            tbradley1013/dragondown         FALSE  
+## 10 tbradley1… dragondown_book       tbradley1013/dragondown_book    FALSE  
+## # … with 25 more rows</code></pre>
 <p>There is a lot of other information contained within the <code>repos</code> API response. However, since I will be focusing mainly on my commits, I don’t need most of it for this purpose.</p>
 </div>
 <div id="get-and-parse-commits" class="section level1">
@@ -89,7 +89,10 @@ gh_safe &lt;- purrr::possibly(gh, otherwise = NULL)</code></pre>
   owner &lt;- name_split[[1]][1]
   repo &lt;- name_split[[1]][2]
   
-  repo_commits &lt;- gh_safe(&quot;/repos/:owner/:repo/commits&quot;, owner = owner, repo = repo, .limit = Inf)
+  repo_commits &lt;- gh_safe(&quot;/repos/:owner/:repo/commits&quot;, owner = owner, 
+                          repo = repo, author = &quot;tbradley1013&quot;,
+                          since = &quot;2017-01-01T00:00:00Z&quot;,
+                          .limit = Inf)
   
   out &lt;- parse_commit(repo_commits, repo = z)
   
@@ -102,20 +105,20 @@ my_commits &lt;- all_commits %&gt;%
   mutate(commit_time = commit_time - hours(5))
 
 my_commits</code></pre>
-<pre><code>## # A tibble: 3,550 x 5
+<pre><code>## # A tibble: 3,560 x 5
 ##    repo     commit_by  username  commit_time         message               
 ##    &lt;chr&gt;    &lt;chr&gt;      &lt;chr&gt;     &lt;dttm&gt;              &lt;chr&gt;                 
-##  1 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:16:50 rendering changes     
-##  2 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:08:12 Merge branch &#39;master&#39;~
-##  3 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:08:03 changes from rendering
-##  4 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:07:23 force style change    
-##  5 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:45:06 adding public back to~
-##  6 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:44:44 removing public       
-##  7 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:37:32 Merge branch &#39;master&#39;~
-##  8 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:37:12 rendered on server    
-##  9 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:35:46 removed public        
-## 10 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:33:36 added post for settin~
-## # ... with 3,540 more rows</code></pre>
+##  1 nmanna/… Tyler Bra… tbradley… 2019-10-25 07:16:50 rendering changes     
+##  2 nmanna/… Tyler Bra… tbradley… 2019-10-25 07:08:12 Merge branch &#39;master&#39;…
+##  3 nmanna/… Tyler Bra… tbradley… 2019-10-25 07:08:03 changes from rendering
+##  4 nmanna/… Tyler Bra… tbradley… 2019-10-25 07:07:23 force style change    
+##  5 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:45:06 adding public back to…
+##  6 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:44:44 removing public       
+##  7 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:37:32 Merge branch &#39;master&#39;…
+##  8 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:37:12 rendered on server    
+##  9 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:35:46 removed public        
+## 10 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:33:36 added post for settin…
+## # … with 3,550 more rows</code></pre>
 </div>
 <div id="analyzing-the-results" class="section level1">
 <h1>Analyzing the results</h1>
