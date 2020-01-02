@@ -34,7 +34,7 @@ library(glue)
 We will also define a custom color palette based on the [GitHub Style Guide](https://primer.style/css/utilities/colors) to stick with the post's theme.
 
 ```{r gh-theme}
-gh_pal <- c(blue = "#0366d6", yellow = "#ffd33d", red = "#d73a49", green = "#28a745", purple = "#6f42c1")
+gh_pal <- c(blue = "#0366d6", yellow = "#ffd33d", red = "#d73a49", green = "#28a745", purple = "#6f42c1", light_green = "#dcffe4")
 ```
 
 # Getting Repos
@@ -136,7 +136,7 @@ my_commits <- my_commits %>%
   )
 ```
 
-```{r commits-per-year, fig.width = 8, fig.height = 4}
+```{r commits-per-year, fig.width = 10, fig.height = 5}
 my_commits %>% 
   count(year) %>% 
   ggplot(aes(as.character(year), n)) + 
@@ -155,4 +155,70 @@ my_commits %>%
   )
 
 
+```
+
+We can see that I have used GitHub more and more over the last three years, with my highest number of commits coming in 2019 (n = 1988). The same trend is true when looking at my commits to public and private repos.
+
+```{r, fig.width = 10, fig.height = 5}
+my_commits  %>% 
+  count(year, private) %>% 
+  mutate(private = ifelse(private, "Private", "Public"),
+         year = factor(year, levels = unique(year)),
+         text_x = ifelse(private == "Private", as.numeric(year) - 0.22, as.numeric(year) + 0.22)) %>% 
+  ggplot(aes(year, n, fill = private)) + 
+  geom_col(position = "dodge") + 
+  geom_text(aes(text_x, n-20, label = paste(n, "commits")), color = "white", fontface = "bold") +
+  theme_bw() + 
+  # ggsci::scale_f
+  scale_fill_manual(values = c(unname(gh_pal["blue"]), unname(gh_pal["green"]))) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1550)) + 
+  scale_x_discrete(expand = c(0.17, 0.17)) +
+  labs(
+    title = "Number of GitHub Commits by Tyler Bradley (tbradley1013) to Public and Private Repos by Year",
+    y = "Number of Commits"
+  ) + 
+  theme(
+    axis.title.x = element_blank(),
+    legend.title = element_blank()
+  )
+
+```
+
+
+We can also use `ggplot2` to recreate the GitHub contribution heatmap. There is a minor bit of hacking to get the axes in the desired format showing the start to the month, but it can be done like this. 
+
+```{r contributions-heat, fig.width = 10, fig.height = 10}
+my_commits %>% 
+  count(date, wday, year, week) %>% 
+  mutate(
+    week = factor(week),
+    wday = fct_rev(wday)
+  ) %>% 
+  group_by(year, week) %>% 
+  mutate(
+    min_date = floor_date(date, "week"), 
+    min_date = if_else(
+      year(min_date) < year, 
+      as.Date(str_replace(min_date, as.character(year-1), "1998")),
+      as.Date(str_replace(min_date, as.character(year), "1999"))
+    )
+    
+  ) %>% 
+  ungroup() %>% 
+  ggplot(aes(min_date, wday, fill = n)) + 
+  facet_wrap(~year, ncol = 1) +
+  geom_tile(width = 5, height = 0.9, color = "black") + 
+  theme_bw() + 
+  scale_y_discrete(expand = c(0,0)) + 
+  scale_x_date(date_breaks = "1 month", date_labels = "%b", expand = c(0, 0)) +
+  labs(
+    title = "Tyler Bradley's (tbradley1013) GitHub contributions heat map by year"
+  ) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title = element_blank(),
+    legend.title = element_blank()
+  ) + 
+  scale_fill_gradient(low = gh_pal["light_green"], high = gh_pal["green"])
 ```
