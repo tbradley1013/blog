@@ -1,0 +1,256 @@
+---
+title: Analyzing My 2019 GitHub Usage in R
+author: Tyler Bradley
+date: '2020-01-02'
+slug: analyzing-my-2019-github-usage-in-r
+categories:
+  - R
+tags:
+  - rstats
+  - github
+  - gh
+description: ''
+topics: []
+---
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>If you are anything like me, then you probably enjoy the contribution graphs that GitHub posts to both your own and others GitHub profile. You can see mine <a href="https://github.com/tbradley1013">here</a>. Since it is the beginning of a new year, I thought it would be fun to take a look back to see how I used GitHub in 2019 and in previous years. This is made much easier by using the <a href="https://github.com/r-lib/gh"><code>gh</code></a> R package which provides an R interface to the <a href="https://developer.github.com/v3/">GitHub API</a>. This post will walk through how to get all of the commits for your personal repos (so your results will look different from mine). The <code>gh</code> package will use the <code>GITHUB_PAT</code> environment variable to access any personal access token you have previously set up. If you do not have that configured, than you can provide your token with the <code>.token</code> argument.</p>
+<pre class="r"><code>library(tidyverse)
+library(gh)
+library(lubridate)
+library(glue)</code></pre>
+<p>We will also define a custom color palette based on the <a href="https://primer.style/css/utilities/colors">GitHub Style Guide</a> to stick with the post’s theme.</p>
+<pre class="r"><code>gh_pal &lt;- c(blue = &quot;#0366d6&quot;, yellow = &quot;#ffd33d&quot;, red = &quot;#d73a49&quot;, green = &quot;#28a745&quot;, purple = &quot;#6f42c1&quot;, light_green = &quot;#dcffe4&quot;)</code></pre>
+</div>
+<div id="getting-repos" class="section level1">
+<h1>Getting Repos</h1>
+<p>First, we want to get a listing of all of the repos that are associated with my GitHub account. We can do this using the <code>/user/repos</code> API endpoint.</p>
+<pre class="r"><code>repos &lt;- gh(&quot;/user/repos&quot;, .limit = Inf)</code></pre>
+<p>We can extract the desired information from the <code>repos</code> using the <code>map_chr</code> and <code>map_lgl</code> functions in the <code>purrr</code> package.</p>
+<pre class="r"><code>repo_info &lt;- tibble(
+  owner = map_chr(repos, c(&quot;owner&quot;, &quot;login&quot;)),
+  name = map_chr(repos, &quot;name&quot;),
+  full_name = map_chr(repos, &quot;full_name&quot;),
+  private = map_lgl(repos, &quot;private&quot;)
+)
+
+# showing the first few non-private repos
+filter(repo_info, !private)</code></pre>
+<pre><code>## # A tibble: 35 x 4
+##    owner      name                  full_name                       private
+##    &lt;chr&gt;      &lt;chr&gt;                 &lt;chr&gt;                           &lt;lgl&gt;  
+##  1 saleslab   DWC                   saleslab/DWC                    FALSE  
+##  2 saleslab   ParsingLabSolutionsA~ saleslab/ParsingLabSolutionsAS~ FALSE  
+##  3 tbradley1~ adv-r                 tbradley1013/adv-r              FALSE  
+##  4 tbradley1~ aob-power             tbradley1013/aob-power          FALSE  
+##  5 tbradley1~ blog                  tbradley1013/blog               FALSE  
+##  6 tbradley1~ connectapi            tbradley1013/connectapi         FALSE  
+##  7 tbradley1~ critical-thinking-ev~ tbradley1013/critical-thinking~ FALSE  
+##  8 tbradley1~ dbp-calculator        tbradley1013/dbp-calculator     FALSE  
+##  9 tbradley1~ dragondown            tbradley1013/dragondown         FALSE  
+## 10 tbradley1~ dragondown_book       tbradley1013/dragondown_book    FALSE  
+## # ... with 25 more rows</code></pre>
+<p>There is a lot of other information contained within the <code>repos</code> API response. However, since I will be focusing mainly on my commits, I don’t need most of it for this purpose.</p>
+</div>
+<div id="get-and-parse-commits" class="section level1">
+<h1>Get and Parse Commits</h1>
+<p>In order to get all of the commits for each of these repos, we will use the <code>map_dfr</code> to append all of the commit information for each repo into a single dataset. Before we do that, we need to define a few helper functions that can parse the output of the API endpoint response.</p>
+<pre class="r"><code>null_list &lt;- function(x){
+  map_chr(x, ~{ifelse(is.null(.x), NA, .x)})
+}
+
+parse_commit &lt;- function(commits, repo){
+  # browser()
+  commit_by &lt;- map(commits, c(&quot;commit&quot;, &quot;author&quot;, &quot;name&quot;))
+  username &lt;- map(commits, c(&quot;committer&quot;, &quot;login&quot;))
+  commit_time &lt;- map(commits, c(&quot;commit&quot;, &quot;author&quot;, &quot;date&quot;))
+  message &lt;- map(commits, c(&quot;commit&quot;, &quot;message&quot;))
+  
+  out &lt;- tibble(
+    repo = repo,
+    commit_by = null_list(commit_by),
+    username = null_list(username),
+    commit_time = null_list(commit_time),
+    message = null_list(message)
+  )
+  
+  out &lt;- mutate(out, commit_time = as.POSIXct(commit_time, format = &quot;%Y-%m-%dT%H:%M:%SZ&quot;))
+  return(out)
+}
+
+gh_safe &lt;- purrr::possibly(gh, otherwise = NULL)</code></pre>
+<p>The <code>parse_commit</code> function will extract the desired information from each API response. The <code>null_list</code> function is a simple helper to convert any NULL values in the response to NA, so that the <code>map</code> functions don’t throw errors. Finally, the <code>gh_safe</code> function is a safe version of the <code>gh</code> function. This is defined in case any of the individual responses fail, it doesn’t cause the entire loop to fail.</p>
+<p>Now we can query all of the commits from each of these repos and filter the output to include only commits that I made.</p>
+<pre class="r"><code>all_commits &lt;- map_dfr(repo_info$full_name, function(z){
+  name_split &lt;- str_split(z, &quot;/&quot;)
+  owner &lt;- name_split[[1]][1]
+  repo &lt;- name_split[[1]][2]
+  
+  repo_commits &lt;- gh_safe(&quot;/repos/:owner/:repo/commits&quot;, owner = owner, repo = repo, .limit = Inf)
+  
+  out &lt;- parse_commit(repo_commits, repo = z)
+  
+  return(out)
+})
+
+
+my_commits &lt;- all_commits %&gt;% 
+  filter(commit_by == &quot;Tyler Bradley&quot;) %&gt;% 
+  mutate(commit_time = commit_time - hours(5))
+
+my_commits</code></pre>
+<pre><code>## # A tibble: 3,550 x 5
+##    repo     commit_by  username  commit_time         message               
+##    &lt;chr&gt;    &lt;chr&gt;      &lt;chr&gt;     &lt;dttm&gt;              &lt;chr&gt;                 
+##  1 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:16:50 rendering changes     
+##  2 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:08:12 Merge branch &#39;master&#39;~
+##  3 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:08:03 changes from rendering
+##  4 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 07:07:23 force style change    
+##  5 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:45:06 adding public back to~
+##  6 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:44:44 removing public       
+##  7 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:37:32 Merge branch &#39;master&#39;~
+##  8 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:37:12 rendered on server    
+##  9 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:35:46 removed public        
+## 10 nmanna/~ Tyler Bra~ tbradley~ 2019-10-25 06:33:36 added post for settin~
+## # ... with 3,540 more rows</code></pre>
+</div>
+<div id="analyzing-the-results" class="section level1">
+<h1>Analyzing the results</h1>
+<p>First, we can look at the overall number of commits I have made per year since I started using GitHub in 2017. Before we do that, we will add a few columns to the <code>my_commits</code> dataset to include grouping variables based on the commit date and time. We will also join the <code>repo_info</code> dataset to the <code>my_commits</code> dataset.</p>
+<pre class="r"><code>my_commits &lt;- my_commits %&gt;% 
+  mutate(
+    date = date(commit_time),
+    wday = wday(date, label = TRUE),
+    year = year(date),
+    week = week(date)
+  ) %&gt;% 
+  left_join(
+    repo_info, 
+    by = c(&quot;repo&quot; = &quot;full_name&quot;)
+  ) %&gt;% 
+  filter(year &lt;= 2019)</code></pre>
+<pre class="r"><code>my_commits %&gt;% 
+  count(year) %&gt;% 
+  ggplot(aes(as.character(year), n)) + 
+  geom_col(fill = gh_pal[&quot;green&quot;]) + 
+  geom_text(aes(y = (n-35), label = paste(n, &quot;commits&quot;)), color = &quot;white&quot;, fontface = &quot;bold&quot;) + 
+  theme_bw() + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 2050)) + 
+  scale_x_discrete(expand = c(0.17, 0.17)) + 
+  labs(
+    title = &quot;Commits by Tyler Bradley (tbradley1013) since joining GitHub by Year&quot;,
+    y = &quot;Number of Commits&quot;
+  ) + 
+  theme(
+    axis.title.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )</code></pre>
+<p><img src="/post/2020-01-02-analyzing-my-2019-github-usage-in-r_files/figure-html/commits-per-year-1.png" width="960" /></p>
+<p>We can see that I have used GitHub more and more over the last three years, with my highest number of commits coming in 2019 (n = 1988). The same trend is true when looking at my commits to public and private repos.</p>
+<pre class="r"><code>my_commits  %&gt;% 
+  count(year, private) %&gt;% 
+  mutate(private = ifelse(private, &quot;Private&quot;, &quot;Public&quot;),
+         year = factor(year, levels = unique(year)),
+         text_x = ifelse(private == &quot;Private&quot;, as.numeric(year) - 0.22, as.numeric(year) + 0.22)) %&gt;% 
+  ggplot(aes(year, n, fill = private)) + 
+  geom_col(position = &quot;dodge&quot;) + 
+  geom_text(aes(text_x, n-20, label = paste(n, &quot;commits&quot;)), color = &quot;white&quot;, fontface = &quot;bold&quot;) +
+  theme_bw() + 
+  # ggsci::scale_f
+  scale_fill_manual(values = c(unname(gh_pal[&quot;blue&quot;]), unname(gh_pal[&quot;green&quot;]))) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1550)) + 
+  scale_x_discrete(expand = c(0.17, 0.17)) +
+  labs(
+    title = &quot;Number of GitHub Commits by Tyler Bradley (tbradley1013) to Public and Private Repos by Year&quot;,
+    y = &quot;Number of Commits&quot;
+  ) + 
+  theme(
+    axis.title.x = element_blank(),
+    legend.title = element_blank()
+  )</code></pre>
+<p><img src="/post/2020-01-02-analyzing-my-2019-github-usage-in-r_files/figure-html/unnamed-chunk-5-1.png" width="960" /></p>
+<p>We can also use <code>ggplot2</code> to recreate the GitHub contribution heatmap. There is a minor bit of hacking to get the axes in the desired format showing the start to the month, but it can be done like this.</p>
+<pre class="r"><code>my_commits %&gt;% 
+  count(date, wday, year, week) %&gt;% 
+  mutate(
+    week = factor(week),
+    wday = fct_rev(wday)
+  ) %&gt;% 
+  group_by(year, week) %&gt;% 
+  mutate(
+    min_date = floor_date(date, &quot;week&quot;), 
+    min_date = if_else(
+      year(min_date) &lt; year, 
+      as.Date(str_replace(min_date, as.character(year-1), &quot;1998&quot;)),
+      as.Date(str_replace(min_date, as.character(year), &quot;1999&quot;))
+    )
+    
+  ) %&gt;% 
+  ungroup() %&gt;% 
+  ggplot(aes(min_date, wday, fill = n)) + 
+  facet_wrap(~year, ncol = 1) +
+  geom_tile(width = 5, height = 0.9, color = &quot;black&quot;) + 
+  theme_bw() + 
+  scale_y_discrete(expand = c(0,0)) + 
+  scale_x_date(date_breaks = &quot;1 month&quot;, date_labels = &quot;%b&quot;, expand = c(0, 0)) +
+  labs(
+    title = &quot;Tyler Bradley&#39;s (tbradley1013) GitHub contributions heat map by year&quot;
+  ) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title = element_blank(),
+    legend.title = element_blank()
+  ) + 
+  scale_fill_gradient(low = gh_pal[&quot;light_green&quot;], high = gh_pal[&quot;green&quot;])</code></pre>
+<p><img src="/post/2020-01-02-analyzing-my-2019-github-usage-in-r_files/figure-html/contributions-heat-1.png" width="960" /></p>
+<p>Now we can look just at the last year and see when I am the most productive according to commits. We can group the commits by the day of the week and the time of day to see if any patterns can be seen.</p>
+<pre class="r"><code>my_commits %&gt;% 
+  filter(year == 2019) %&gt;% 
+  mutate(
+    hour = hour(commit_time)
+  ) %&gt;% 
+  count(hour) %&gt;% 
+  mutate(
+    text_y = ifelse(n &lt; 50, n+5, n-5),
+    text_color = ifelse(n &lt; 50, &quot;black&quot;, &quot;white&quot;)
+  ) %&gt;% 
+  ggplot(aes(hour, n)) + 
+  geom_col(fill = gh_pal[&quot;green&quot;]) + 
+  geom_text(aes(y = text_y, color = text_color, label = paste(&quot;n =&quot;, n)), show.legend = FALSE, size = 3) + 
+  theme_bw() + 
+  scale_x_continuous(breaks = seq(0, 23, 2), labels = seq(0, 23, 2)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 310)) +
+  scale_color_manual(values = c(&quot;black&quot;, &quot;white&quot;)) + 
+  labs(
+    title = &quot;Commits by Tyler Bradley (tbradley1013) in 2019 by time of day&quot;,
+    y = &quot;Number of Commits&quot;,
+    x = &quot;Time of Day (Hour)&quot;
+  )</code></pre>
+<p><img src="/post/2020-01-02-analyzing-my-2019-github-usage-in-r_files/figure-html/commits-by-hour-1.png" width="960" /></p>
+<p>My most productive time periods are clearly between 9 am and 2 pm. Over the course of that time it appears that I am fairly consistent in my productivity. This period of productivity corresponds to the time when I am in the office at work. The time periods right outside of that window (7am-8am and 3pm-4pm) are typically the beginning and end of my work day so I am either getting my day started or wrapping things up at that point. It is clear from this figure that I don’t tend to do any work from 10pm-5am which conforms as expected with my sleep schedule.</p>
+<p>Similarly, my commits by day of the week conforms with an expected pattern that my most productive periods are when I am at work in the office Monday-Friday.</p>
+<pre class="r"><code>my_commits %&gt;% 
+  filter(year == 2019) %&gt;% 
+  count(wday) %&gt;% 
+  ggplot(aes(wday, n)) + 
+  geom_col(fill = gh_pal[&quot;green&quot;]) + 
+  geom_text(aes(y = n-10, label = paste(&quot;n =&quot;, n)), color = &quot;white&quot;, show.legend = FALSE) + 
+  theme_bw() +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 475)) +
+  scale_color_manual(values = c(&quot;black&quot;, &quot;white&quot;)) + 
+  labs(
+    title = &quot;Commits by Tyler Bradley (tbradley1013) in 2019 by day of the week&quot;,
+    y = &quot;Number of Commits&quot;,
+    x = &quot;Day of the week&quot;
+  )</code></pre>
+<p><img src="/post/2020-01-02-analyzing-my-2019-github-usage-in-r_files/figure-html/commits-by-wday-1.png" width="960" /></p>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Overall, 2019 was a very productive year for me in terms of GitHub commits! At this point, I am very committed to the git/GitHub workflow and expect that my commits will continue to either follow an upward trend or reach a plateau as I continue to take on new and exciting projects at work and in school!</p>
+<p>The <code>gh</code> package allows R users to easily interact with the GitHub API and analyze how they are utilizing the tools available through GitHub.</p>
+</div>
