@@ -112,7 +112,8 @@ all_commits <- map_dfr(repo_info$full_name, function(z){
 
 
 my_commits <- all_commits %>% 
-  filter(commit_by == "Tyler Bradley")
+  filter(commit_by == "Tyler Bradley", year <= 2019) %>% 
+  mutate(commit_time = commit_time - hours(5))
 
 my_commits
 ```
@@ -222,3 +223,61 @@ my_commits %>%
   ) + 
   scale_fill_gradient(low = gh_pal["light_green"], high = gh_pal["green"])
 ```
+
+
+Now we can look just at the last year and see when I am the most productive according to commits. We can group the commits by the day of the week and the time of day to see if any patterns can be seen. 
+
+```{r commits-by-hour, fig.width = 10, fig.height = 5}
+my_commits %>% 
+  filter(year == 2019) %>% 
+  mutate(
+    hour = hour(commit_time)
+  ) %>% 
+  count(hour) %>% 
+  mutate(
+    text_y = ifelse(n < 50, n+5, n-5),
+    text_color = ifelse(n < 50, "black", "white")
+  ) %>% 
+  ggplot(aes(hour, n)) + 
+  geom_col(fill = gh_pal["green"]) + 
+  geom_text(aes(y = text_y, color = text_color, label = paste("n =", n)), show.legend = FALSE, size = 3) + 
+  theme_bw() + 
+  scale_x_continuous(breaks = seq(0, 23, 2), labels = seq(0, 23, 2)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 310)) +
+  scale_color_manual(values = c("black", "white")) + 
+  labs(
+    title = "Commits by Tyler Bradley (tbradley1013) in 2019 by time of day",
+    y = "Number of Commits",
+    x = "Time of Day (Hour)"
+  )
+
+```
+
+My most productive time periods are clearly between 9 am and 2 pm. Over the course of that time it appears that I am fairly consistent in my productivity. This period of productivity corresponds to the time when I am in the office at work. The time periods right outside of that window (7am-8am and 3pm-4pm) are typically the beginning and end of my work day so I am either getting my day started or wrapping things up at that point. It is clear from this figure that I don't tend to do anywork from 10pm-5am which conforms as expected with my sleep schedule. 
+
+Similarly, my commits by day of the week conforms with an expected pattern that my most productive periods are when I am at work in the office Monday-Friday. 
+
+```{r commits-by-wday, fig.width = 10, fig.height = 6}
+my_commits %>% 
+  filter(year == 2019) %>% 
+  count(wday) %>% 
+  ggplot(aes(wday, n)) + 
+  geom_col(fill = gh_pal["green"]) + 
+  geom_text(aes(y = n-10, label = paste("n =", n)), color = "white", show.legend = FALSE) + 
+  theme_bw() +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 475)) +
+  scale_color_manual(values = c("black", "white")) + 
+  labs(
+    title = "Commits by Tyler Bradley (tbradley1013) in 2019 by day of the week",
+    y = "Number of Commits",
+    x = "Day of the week"
+  )
+```
+
+
+
+# Conclusion
+
+Overall, 2019 was a very productive year for me in terms of GitHub commits! At this point, I am very committed to the git/GitHub workflow and expect that my commits will continue to either follow an upward trend or reach a plateau as I continue to take on new and exciting projects at work and in school! 
+
+The `gh` package allows R users to easily interact with the GitHub API and analyze how they are utilizing the tools available through GitHub. 
