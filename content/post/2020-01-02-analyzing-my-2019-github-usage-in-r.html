@@ -92,6 +92,7 @@ gh_safe &lt;- purrr::possibly(gh, otherwise = NULL)</code></pre>
   repo_commits &lt;- gh_safe(&quot;/repos/:owner/:repo/commits&quot;, owner = owner, 
                           repo = repo, author = &quot;tbradley1013&quot;,
                           since = &quot;2017-01-01T00:00:00Z&quot;,
+                          until = &quot;2020-01-01T00:00:00Z&quot;,
                           .limit = Inf)
   
   out &lt;- parse_commit(repo_commits, repo = z)
@@ -105,7 +106,7 @@ my_commits &lt;- all_commits %&gt;%
   mutate(commit_time = commit_time - hours(5))
 
 my_commits</code></pre>
-<pre><code>## # A tibble: 3,560 x 5
+<pre><code>## # A tibble: 3,549 x 5
 ##    repo     commit_by  username  commit_time         message               
 ##    &lt;chr&gt;    &lt;chr&gt;      &lt;chr&gt;     &lt;dttm&gt;              &lt;chr&gt;                 
 ##  1 nmanna/… Tyler Bra… tbradley… 2019-10-25 07:16:50 rendering changes     
@@ -118,7 +119,7 @@ my_commits</code></pre>
 ##  8 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:37:12 rendered on server    
 ##  9 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:35:46 removed public        
 ## 10 nmanna/… Tyler Bra… tbradley… 2019-10-25 06:33:36 added post for settin…
-## # … with 3,550 more rows</code></pre>
+## # … with 3,539 more rows</code></pre>
 </div>
 <div id="analyzing-the-results" class="section level1">
 <h1>Analyzing the results</h1>
@@ -133,8 +134,7 @@ my_commits</code></pre>
   left_join(
     repo_info, 
     by = c(&quot;repo&quot; = &quot;full_name&quot;)
-  ) %&gt;% 
-  filter(year &lt;= 2019)</code></pre>
+  ) </code></pre>
 <pre class="r"><code>my_commits %&gt;% 
   count(year) %&gt;% 
   ggplot(aes(as.character(year), n)) + 
